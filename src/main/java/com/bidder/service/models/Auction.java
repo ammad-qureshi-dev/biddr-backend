@@ -1,0 +1,41 @@
+/* (C) 2026 
+bidder.app */
+package com.bidder.service.models;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+import com.bidder.service.utils.Constants;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import org.hibernate.validator.constraints.Length;
+
+@Getter
+@Setter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Entity
+@Table(schema = Constants.Database.SCHEMA, name = "auction")
+@EqualsAndHashCode(callSuper = true)
+@ToString(exclude = {"items"})
+public class Auction extends BaseEntity {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.UUID)
+	private UUID id;
+
+	@NotNull @Length(max = 128) private String title;
+
+	@OneToMany(mappedBy = "auction", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Item> items;
+
+	@NotNull private LocalDateTime startTime;
+
+	@NotNull private LocalDateTime endTime;
+
+	@Enumerated(EnumType.STRING)
+	private AuctionStatus auctionStatus;
+}

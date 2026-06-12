@@ -1,0 +1,82 @@
+/* (C) 2026 
+bidder.app */
+package com.bidder.service.service;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+import com.bidder.service.mappers.AuctionMapper;
+import com.bidder.service.mappers.ItemMapper;
+import com.bidder.service.models.Auction;
+import com.bidder.service.models.request.AuctionRequest;
+import com.bidder.service.models.response.AuctionResponse;
+import com.bidder.service.repository.AuctionRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class AuctionService {
+
+	private final AuctionRepository auctionRepository;
+	private final ItemService itemService;
+
+	public UUID createAuction(AuctionRequest request) {
+		validationAuctionRequest(request);
+
+		// var auction = AuctionMapper.requestToEntity(request);
+
+		final var auction = Auction.builder().title(request.title()).startTime(request.startTime())
+				.endTime(request.endTime()).build();
+
+		auctionRepository.save(auction);
+
+		itemService.createItems(request.biddingItems(), auction);
+
+		return auction.getId();
+	}
+
+	public UUID updateAuction(UUID auctionId, AuctionRequest request) {
+		validationAuctionRequest(request);
+
+		final var auction = auctionRepository.findById(auctionId).orElseThrow();
+		auction.setTitle(request.title());
+		auction.setStartTime(request.startTime());
+		auction.setEndTime(request.endTime());
+
+		final var newItems = request.biddingItems().stream().filter(e -> e.id() == null).toList().stream()
+				.map(ItemMapper::requestToEntity).toList();
+		auction.getItems().addAll(newItems);
+
+		auctionRepository.save(auction);
+
+		return auction.getId();
+	}
+
+	public Auction getAuctionById(UUID id) {
+		return auctionRepository.findById(id).orElseThrow(() -> new IllegalStateException("Auction not found"));
+	}
+
+	public AuctionResponse getAuctionResponse(UUID auctionId) {
+		var auction = getAuctionById(auctionId);
+		return AuctionMapper.entityToResponse(auction);
+	}
+
+	private static void validationAuctionRequest(AuctionRequest request) {
+		if (!validateAuctionTime(request)) {
+			throw new RuntimeException("Auction timings are invalid");
+		}
+
+		if (request.biddingItems() == null || request.biddingItems().isEmpty()) {
+			throw new RuntimeException("Auction should have at least one bidding item");
+		}
+	}
+
+	private static boolean validateAuctionTime(AuctionRequest request) {
+		if (request.startTime().isBefore(request.endTime())) {
+			return true;
+		}
+
+		return !request.startTime().isBefore(LocalDateTime.now()) && !request.endTime().isBefore(LocalDateTime.now());
+	}
+}

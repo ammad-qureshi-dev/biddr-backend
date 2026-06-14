@@ -3,11 +3,13 @@ bidder.app */
 package com.bidder.service.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import com.bidder.service.mappers.AuctionMapper;
 import com.bidder.service.mappers.ItemMapper;
 import com.bidder.service.models.Auction;
+import com.bidder.service.models.AuctionStatus;
 import com.bidder.service.models.request.AuctionRequest;
 import com.bidder.service.models.response.AuctionResponse;
 import com.bidder.service.repository.AuctionRepository;
@@ -23,8 +25,6 @@ public class AuctionService {
 
 	public UUID createAuction(AuctionRequest request) {
 		validationAuctionRequest(request);
-
-		// var auction = AuctionMapper.requestToEntity(request);
 
 		final var auction = Auction.builder().title(request.title()).startTime(request.startTime())
 				.endTime(request.endTime()).build();
@@ -60,6 +60,18 @@ public class AuctionService {
 	public AuctionResponse getAuctionResponse(UUID auctionId) {
 		var auction = getAuctionById(auctionId);
 		return AuctionMapper.entityToResponse(auction);
+	}
+
+	public List<AuctionResponse> searchAuctions(String title, AuctionStatus status, LocalDateTime startAfter,
+			LocalDateTime endBefore) {
+		return auctionRepository.search(title, status, startAfter, endBefore).stream()
+				.map(AuctionMapper::entityToResponse).toList();
+	}
+
+	public void updateAuctionStatus(UUID auctionId, AuctionStatus status) {
+		var auction = getAuctionById(auctionId);
+		auction.setAuctionStatus(status);
+		auctionRepository.save(auction);
 	}
 
 	private static void validationAuctionRequest(AuctionRequest request) {

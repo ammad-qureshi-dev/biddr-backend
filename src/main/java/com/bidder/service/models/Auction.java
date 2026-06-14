@@ -29,6 +29,9 @@ public class Auction extends BaseEntity {
 
 	@NotNull @Length(max = 128) private String title;
 
+	@OneToOne
+	private AppUser owner;
+
 	@OneToMany(mappedBy = "auction", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Item> items;
 
@@ -36,6 +39,7 @@ public class Auction extends BaseEntity {
 
 	@NotNull private LocalDateTime endTime;
 
+	@Builder.Default
 	@Enumerated(EnumType.STRING)
-	private AuctionStatus auctionStatus;
+	private AuctionStatus auctionStatus = AuctionStatus.OPEN;
 }

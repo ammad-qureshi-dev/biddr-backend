@@ -2,13 +2,17 @@
 bidder.app */
 package com.bidder.service.controllers;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
+import com.bidder.service.models.AuctionStatus;
 import com.bidder.service.models.request.AuctionRequest;
 import com.bidder.service.models.response.ApiResponse;
 import com.bidder.service.models.response.AuctionResponse;
 import com.bidder.service.service.AuctionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,10 +40,27 @@ public class AuctionController {
 		return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.<UUID>builder().data(response).build());
 	}
 
+	@PutMapping("/{auctionId}/status/{status}")
+	public ResponseEntity<ApiResponse<UUID>> updateAuctionStatus(@PathVariable UUID auctionId,
+			@PathVariable AuctionStatus status) {
+		auctionService.updateAuctionStatus(auctionId, status);
+		return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.<UUID>builder().data(auctionId).build());
+	}
+
 	@GetMapping("/{auctionId}")
 	public ResponseEntity<ApiResponse<AuctionResponse>> getAuction(@PathVariable UUID auctionId) {
 		var response = auctionService.getAuctionResponse(auctionId);
 		return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.<AuctionResponse>builder().data(response).build());
+	}
+
+	@GetMapping("/search")
+	public ResponseEntity<ApiResponse<List<AuctionResponse>>> searchAuctions(
+			@RequestParam(required = false) String title, @RequestParam(required = false) AuctionStatus status,
+			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startAfter,
+			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endBefore) {
+		var results = auctionService.searchAuctions(title, status, startAfter, endBefore);
+		return ResponseEntity.status(HttpStatus.OK)
+				.body(ApiResponse.<List<AuctionResponse>>builder().data(results).build());
 	}
 
 }

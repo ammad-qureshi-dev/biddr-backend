@@ -6,6 +6,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-public record AuctionResponse(UUID id, List<ItemResponse> items, LocalDateTime startTime, LocalDateTime endTime) {
+import com.bidder.service.models.AuctionStatus;
+
+public record AuctionResponse(UUID id, String title, AuctionStatus auctionStatus, List<ItemResponse> items,
+		LocalDateTime startTime, LocalDateTime endTime) {
 
 }

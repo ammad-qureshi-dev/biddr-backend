@@ -14,9 +14,9 @@ import lombok.NoArgsConstructor;
 public class Message {
 	private MessageType type;
 	private MessageCode code;
-	private String message;
+	private String content;
 
 	public static Message generateMessage(MessageType type, MessageCode code) {
-		return Message.builder().type(type).code(code).message(code.getMessage()).build();
+		return Message.builder().type(type).code(code).content(code.getMessage()).build();
 	}
 }

@@ -32,29 +32,18 @@ public class AuthController {
 	private final JwtService jwtService;
 
 	@PostMapping("/login")
-	public ResponseEntity<ApiResponse<UUID>> login(@RequestBody LoginRequest request) {
-		try {
+	public ResponseEntity<ApiResponse<UUID>> login(@RequestBody LoginRequest request) throws AuthenticationException {
 			var response = authService.appUserLogin(request);
 			var headers = jwtService.generateTokenCookieHeader(response.token());
 			var loginResponse = ApiResponse.<UUID>builder().data(response.userId()).build();
 			return new ResponseEntity<>(loginResponse, headers, HttpStatus.OK);
-
-		} catch (AuthenticationException e) {
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.<UUID>builder().data(null).build());
-		}
 	}
 
 	@PostMapping("/register")
 	public ResponseEntity<ApiResponse<UUID>> register(@RequestBody RegisterAppUserRequest request) {
-		try {
 			var response = authService.appUserRegistration(request);
 			var headers = jwtService.generateTokenCookieHeader(response.token());
 			var loginResponse = ApiResponse.<UUID>builder().data(response.userId()).build();
 			return new ResponseEntity<>(loginResponse, headers, HttpStatus.OK);
-
-		} catch (RuntimeException e) {
-			log.error(String.valueOf(e));
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.<UUID>builder().data(null).build());
-		}
 	}
 }

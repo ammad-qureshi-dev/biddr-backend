@@ -17,7 +17,7 @@ public interface AuctionRepository extends JpaRepository<Auction, UUID> {
 	@Query("""
 			select a
 			from Auction a
-			where a.auctionStatus != 'CLOSED'
+			where a.auctionStatus <> com.bidder.service.models.AuctionStatus.CLOSED
 			and a.endTime <= CURRENT_TIMESTAMP
 			""")
 	List<Auction> findOpenAndPausedAuctions();
@@ -25,10 +25,10 @@ public interface AuctionRepository extends JpaRepository<Auction, UUID> {
 	@Query("""
 			select a
 			from Auction a
-			where (:title is null or lower(a.title) like lower(concat('%', :title, '%')))
-			and (:status is null or a.auctionStatus = :status)
-			and (:startAfter is null or a.startTime >= :startAfter)
-			and (:endBefore is null or a.endTime <= :endBefore)
+			where (:title is null or lower(a.title) like concat('%', lower(:title), '%'))
+			and (cast(:status as string) is null or a.auctionStatus = :status)
+			and (cast(:startAfter as LocalDateTime) is null or a.startTime >= :startAfter)
+			and (cast(:endBefore as LocalDateTime) is null or a.endTime <= :endBefore)
 			""")
 	List<Auction> search(@Param("title") String title, @Param("status") AuctionStatus status,
 			@Param("startAfter") LocalDateTime startAfter, @Param("endBefore") LocalDateTime endBefore);

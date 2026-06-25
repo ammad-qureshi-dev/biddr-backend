@@ -15,14 +15,15 @@ import com.bidder.service.models.request.NotificationRequest;
 import com.bidder.service.models.request.RegisterAppUserRequest;
 import com.bidder.service.models.response.AuthResponse;
 import com.bidder.service.repository.AppUserRepository;
-import com.bidder.service.utils.PasswordValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.websocket.AuthenticationException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import static com.bidder.service.utils.Constants.ExceptionMessages.INVALID_CREDENTIALS;
+import static com.bidder.service.utils.Constants.ExceptionMessages.INVALID_PASSWORD_FORMAT;
 import static com.bidder.service.utils.Constants.Messages.WELCOME_MESSAGE;
 import static com.bidder.service.utils.Constants.Messages.WELCOME_TITLE;
 
@@ -33,6 +34,7 @@ public class AuthService {
 
 	private final AppUserRepository appUserRepository;
 	private final JwtService jwtService;
+	private final PasswordService passwordService;
 	private final NotificationService notificationService;
 
 	@Transactional
@@ -58,19 +60,19 @@ public class AuthService {
 		if (request.email() != null) {
 			var userByEmail = appUserRepository.findByEmail(request.email());
 			if (userByEmail.isEmpty()) {
-				throw new AuthenticationException(INVALID_CREDENTIALS);
+				throw new BadCredentialsException(INVALID_CREDENTIALS);
 			}
 			appUser = userByEmail.get();
 		} else {
 			var userByPhone = appUserRepository.findByPhoneNumber(request.phoneNumber());
 			if (userByPhone.isEmpty()) {
-				throw new AuthenticationException(INVALID_CREDENTIALS);
+				throw new BadCredentialsException(INVALID_CREDENTIALS);
 			}
 			appUser = userByPhone.get();
 		}
 
-		if (!PasswordValidator.passwordsMatch(appUser.getPassword(), request.password())) {
-			throw new AuthenticationException(INVALID_CREDENTIALS);
+		if (!PasswordService.passwordsMatch(appUser.getPassword(), request.password())) {
+			throw new BadCredentialsException(INVALID_CREDENTIALS);
 		}
 
 		var token = jwtService.generateToken(
@@ -84,8 +86,8 @@ public class AuthService {
 			throw new IllegalStateException("Provide either email or phone-number");
 		}
 
-		if (!PasswordValidator.isValidPassword(request.password())) {
-			throw new IllegalStateException("Invalid password format");
+		if (!passwordService.isValidPassword(request.password())) {
+			throw new IllegalStateException(INVALID_PASSWORD_FORMAT);
 		}
 
 		if (request.email() != null && appUserRepository.emailExists(request.email())) {

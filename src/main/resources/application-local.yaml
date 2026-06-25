@@ -45,3 +45,7 @@ cookies:
   secure: false
   sameSite: Lax
   httpOnly: false
+
+auth:
+  registration-pwd:
+    allow-simple: true

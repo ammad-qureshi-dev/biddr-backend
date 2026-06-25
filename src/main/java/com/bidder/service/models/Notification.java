@@ -26,7 +26,7 @@ public class Notification extends BaseEntity {
 	@GeneratedValue(strategy = GenerationType.UUID)
 	private UUID id;
 
-	@OneToOne
+	@ManyToOne
 	private AppUser recipient;
 
 	@NotNull @Length(max = 64) private String title;

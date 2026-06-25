@@ -45,3 +45,7 @@ cookies:
   secure: true
   sameSite: None
   httpOnly: true
+
+auth:
+  registration-pwd:
+    allow-simple: true

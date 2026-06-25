@@ -12,6 +12,7 @@ import com.bidder.service.models.NotificationType;
 import com.bidder.service.models.request.NotificationRequest;
 import com.bidder.service.models.response.NotificationResponse;
 import com.bidder.service.repository.NotificationRepository;
+import com.bidder.service.service.notification.EmailSenderService;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,8 +28,7 @@ public class NotificationService {
 
 	private final AppUserService appUserService;
 	private final NotificationRepository notificationRepository;
-
-	private static final int RETRY_LIMIT = 3;
+	private final EmailSenderService emailSenderService;
 
 	public static final Set<ContactMethod> ALL_NOTIFICATION_METHODS = Set.of(ContactMethod.APP, ContactMethod.EMAIL,
 			ContactMethod.MOBILE);
@@ -54,7 +54,7 @@ public class NotificationService {
 		}
 
 		if (request.sendVia().contains(ContactMethod.EMAIL) && appUser.getEmail() != null) {
-			sendEmailNotification(request, appUser);
+			emailSenderService.sendEmailNotification(request, appUser);
 		}
 
 		// ToDo: include status of notifcation if mobile / email
@@ -77,24 +77,6 @@ public class NotificationService {
 		notificationRepository.save(notification);
 
 		log.info("App Notification sent to {}", recipient.getId());
-	}
-
-	private void sendEmailNotification(@NotNull NotificationRequest request, AppUser recipient) {
-		int tries = 0;
-		while (tries < RETRY_LIMIT) {
-			try {
-				tries++;
-				// java mail sender sends mail
-				log.info("Email Notification sent to {}", recipient.getId());
-				break;
-			} catch (RuntimeException e) {
-				log.error("Failed to send notification on try #{}", tries, e);
-
-				if (tries >= RETRY_LIMIT) {
-					throw e;
-				}
-			}
-		}
 	}
 
 	private void sendSmsNotification(@NotNull NotificationRequest request, AppUser recipient) {

@@ -25,7 +25,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import static com.bidder.service.utils.Constants.Security.TOKEN_COOKIE;
+import static com.bidder.service.utils.Constants.Auth.TOKEN_COOKIE;
 
 @Component
 @RequiredArgsConstructor

@@ -19,6 +19,7 @@ public class Constants {
 
 	public static class ExceptionMessages {
 		public static final String INVALID_CREDENTIALS = "Invalid credentials provided";
+		public static final String INVALID_PASSWORD_FORMAT = "Invalid password format";
 	}
 
 	public static class Messages {
@@ -36,10 +37,11 @@ public class Constants {
 		public static final String BID_REQUEST_REJECTED_MESSAGE = "Hi, your bid request for item %s was rejected";
 		public static final String BID_REQUEST_ACCEPTED = "Bid Request Accepted";
 		public static final String BID_REQUEST_ACCEPTED_MESSAGE = "Hi, your bid request for item %s was accepted";
-
 	}
 
-	public static class Security {
+	public static class Auth {
 		public static final String TOKEN_COOKIE = "token";
+		public static final String PASSWORD_RESET = "Password Reset Request";
+		public static final String PASSWORD_RESET_MESSAGE = "You have requested to reset your password. Please open this link to securely reset your password: %s";
 	}
 }

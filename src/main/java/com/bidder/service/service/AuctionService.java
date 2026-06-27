@@ -12,6 +12,7 @@ import com.bidder.service.models.Auction;
 import com.bidder.service.models.AuctionStatus;
 import com.bidder.service.models.request.AuctionRequest;
 import com.bidder.service.models.response.AuctionResponse;
+import com.bidder.service.models.response.ItemResponse;
 import com.bidder.service.repository.AuctionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,11 +23,14 @@ public class AuctionService {
 
 	private final AuctionRepository auctionRepository;
 	private final ItemService itemService;
+	private final AppUserService appUserService;
 
-	public UUID createAuction(AuctionRequest request) {
+	public UUID createAuction(AuctionRequest request, UUID appUserId) {
 		validationAuctionRequest(request);
 
-		final var auction = Auction.builder().title(request.title()).startTime(request.startTime())
+		final var appUser = appUserService.getAppUserById(appUserId);
+
+		final var auction = Auction.builder().title(request.title()).startTime(request.startTime()).owner(appUser)
 				.endTime(request.endTime()).build();
 
 		auctionRepository.save(auction);
@@ -46,6 +50,9 @@ public class AuctionService {
 
 		final var newItems = request.biddingItems().stream().filter(e -> e.id() == null).toList().stream()
 				.map(ItemMapper::requestToEntity).toList();
+
+		newItems.forEach(i -> i.setAuction(auction));
+
 		auction.getItems().addAll(newItems);
 
 		auctionRepository.save(auction);
@@ -72,6 +79,22 @@ public class AuctionService {
 		var auction = getAuctionById(auctionId);
 		auction.setAuctionStatus(status);
 		auctionRepository.save(auction);
+	}
+
+	public List<AuctionResponse> getMyAuctions(UUID appUserId) {
+		var auctions = auctionRepository.findMyAuctions(appUserId);
+		return auctions.stream().map(AuctionMapper::entityToResponse).toList();
+	}
+
+	public List<ItemResponse> getItemsInAuction(UUID auctionId) {
+		var auction = getAuctionById(auctionId);
+		var items = auction.getItems();
+
+		if (items == null || items.isEmpty()) {
+			return List.of();
+		}
+
+		return items.stream().map(ItemMapper::entityToResponse).toList();
 	}
 
 	private static void validationAuctionRequest(AuctionRequest request) {

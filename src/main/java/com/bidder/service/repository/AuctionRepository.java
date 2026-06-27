@@ -25,12 +25,19 @@ public interface AuctionRepository extends JpaRepository<Auction, UUID> {
 	@Query("""
 			select a
 			from Auction a
-			where (:title is null or lower(a.title) like concat('%', lower(:title), '%'))
+			where (cast(:title as string) is null or lower(a.title) like concat('%', lower(cast(:title as string)), '%'))
 			and (cast(:status as string) is null or a.auctionStatus = :status)
 			and (cast(:startAfter as LocalDateTime) is null or a.startTime >= :startAfter)
 			and (cast(:endBefore as LocalDateTime) is null or a.endTime <= :endBefore)
 			""")
 	List<Auction> search(@Param("title") String title, @Param("status") AuctionStatus status,
 			@Param("startAfter") LocalDateTime startAfter, @Param("endBefore") LocalDateTime endBefore);
+
+	@Query("""
+			select a
+			from Auction a
+			where a.owner.id = :appUserId
+			""")
+	List<Auction> findMyAuctions(@Param("appUserId") UUID appUserId);
 
 }

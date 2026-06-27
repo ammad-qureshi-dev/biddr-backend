@@ -15,7 +15,7 @@ public record BidRequest(@NotNull UUID auctionId,
 
 		@NotNull @DecimalMin("0.0") BigDecimal amount,
 
-		@NotNull LocalDateTime placedAt,
+		LocalDateTime placedAt,
 
 		Boolean accepted, Boolean rejected, Boolean active,
 

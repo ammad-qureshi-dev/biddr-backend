@@ -8,7 +8,7 @@ import java.util.UUID;
 
 import com.bidder.service.models.AuctionStatus;
 
-public record AuctionResponse(UUID id, String title, AuctionStatus auctionStatus, List<ItemResponse> items,
-		LocalDateTime startTime, LocalDateTime endTime) {
+public record AuctionResponse(UUID id, UUID ownerId, String title, AuctionStatus auctionStatus,
+		List<ItemResponse> items, LocalDateTime startTime, LocalDateTime endTime) {
 
 }

@@ -39,7 +39,7 @@ public class BidService {
 
 		var item = itemService.getItemById(request.itemId());
 
-		validateBid(request, auction);
+		validateBid(request, auction, bidder.getUserId());
 
 		var bid = BidMapper.requestToEntity(request, auction.getEndTime());
 		bid.setItem(item);
@@ -60,7 +60,7 @@ public class BidService {
 		var auction = auctionService.getAuctionById(request.auctionId());
 		isAuctionOpen(auction);
 
-		validateBid(request, auction);
+		validateBid(request, auction, bidder.getUserId());
 
 		var bid = getBidById(bidId);
 
@@ -189,10 +189,15 @@ public class BidService {
 		return bid.getBidder().getId().equals(bidderId);
 	}
 
-	private void validateBid(BidRequest request, Auction auction) {
-		var placedAt = request.placedAt();
+	private void validateBid(BidRequest request, Auction auction, UUID bidderId) {
 
-		if (placedAt.isBefore(auction.getStartTime()) || placedAt.isAfter(auction.getEndTime())) {
+		if (bidderId.equals(auction.getOwner().getId())) {
+			throw new IllegalStateException("Owner cannot place bids on their items");
+		}
+
+		var now = LocalDateTime.now();
+
+		if (now.isBefore(auction.getStartTime()) || now.isAfter(auction.getEndTime())) {
 			throw new IllegalStateException("Bid cannot be placed outside auction time window");
 		}
 

@@ -29,7 +29,8 @@ public class Auction extends BaseEntity {
 
 	@NotNull @Length(max = 128) private String title;
 
-	@OneToOne
+	@ManyToOne
+	@JoinColumn(name = "owner_id")
 	private AppUser owner;
 
 	@OneToMany(mappedBy = "auction", cascade = CascadeType.ALL, orphanRemoval = true)

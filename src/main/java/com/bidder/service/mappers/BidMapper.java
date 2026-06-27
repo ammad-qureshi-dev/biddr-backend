@@ -11,9 +11,9 @@ import com.bidder.service.models.response.BidDto;
 public class BidMapper {
 
 	public static Bid requestToEntity(BidRequest request, LocalDateTime auctionExpiryDate) {
-		return Bid.builder().accepted(false).active(true).amount(request.amount())
-				.placedAt(request.placedAt() == null ? LocalDateTime.now() : request.placedAt()).rejected(false)
-				.expiresAt(request.expiresAt() == null ? auctionExpiryDate : request.expiresAt()).build();
+		return Bid.builder().accepted(false).active(true).amount(request.amount()).placedAt(LocalDateTime.now())
+				.rejected(false).expiresAt(request.expiresAt() == null ? auctionExpiryDate : request.expiresAt())
+				.build();
 	}
 
 	public static BidDto entityToRequest(Bid entity) {
@@ -22,8 +22,8 @@ public class BidMapper {
 			return null;
 		}
 
-		return new BidDto(entity.getId(), entity.getAmount(), entity.isAccepted(), entity.isRejected(),
-				entity.getRejectReason(), entity.isActive(), entity.getPlacedAt(), entity.getExpiresAt(),
-				AppUserMapper.entityToRequest(entity.getBidder()));
+		return new BidDto(entity.getId(), entity.getItem().getAuction().getId(), entity.getAmount(),
+				entity.isAccepted(), entity.isRejected(), entity.getRejectReason(), entity.isActive(),
+				entity.getPlacedAt(), entity.getExpiresAt(), AppUserMapper.entityToRequest(entity.getBidder()));
 	}
 }

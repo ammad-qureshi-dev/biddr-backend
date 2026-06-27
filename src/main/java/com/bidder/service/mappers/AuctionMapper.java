@@ -15,7 +15,7 @@ public class AuctionMapper {
 
 	public static AuctionResponse entityToResponse(Auction entity) {
 		var itemsDto = entity.getItems().stream().map(ItemMapper::entityToResponse).toList();
-		return new AuctionResponse(entity.getId(), entity.getTitle(), entity.getAuctionStatus(), itemsDto,
-				entity.getStartTime(), entity.getEndTime());
+		return new AuctionResponse(entity.getId(), entity.getOwner().getId(), entity.getTitle(),
+				entity.getAuctionStatus(), itemsDto, entity.getStartTime(), entity.getEndTime());
 	}
 }

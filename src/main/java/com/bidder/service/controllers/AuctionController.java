@@ -6,15 +6,18 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import com.bidder.service.models.AppUserPrincipal;
 import com.bidder.service.models.AuctionStatus;
 import com.bidder.service.models.request.AuctionRequest;
 import com.bidder.service.models.response.ApiResponse;
 import com.bidder.service.models.response.AuctionResponse;
+import com.bidder.service.models.response.ItemResponse;
 import com.bidder.service.service.AuctionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import static com.bidder.service.utils.Constants.Controller.BASE_URI;
@@ -28,8 +31,9 @@ public class AuctionController {
 	private final AuctionService auctionService;
 
 	@PostMapping
-	public ResponseEntity<ApiResponse<UUID>> createAuction(@RequestBody AuctionRequest request) {
-		var auctionId = auctionService.createAuction(request);
+	public ResponseEntity<ApiResponse<UUID>> createAuction(@RequestBody AuctionRequest request,
+			@AuthenticationPrincipal AppUserPrincipal principal) {
+		var auctionId = auctionService.createAuction(request, principal.getUserId());
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.<UUID>builder().data(auctionId).build());
 	}
 
@@ -51,6 +55,22 @@ public class AuctionController {
 	public ResponseEntity<ApiResponse<AuctionResponse>> getAuction(@PathVariable UUID auctionId) {
 		var response = auctionService.getAuctionResponse(auctionId);
 		return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.<AuctionResponse>builder().data(response).build());
+	}
+
+	@GetMapping("/{auctionId}/items")
+	public ResponseEntity<ApiResponse<List<ItemResponse>>> getAuctionItems(@PathVariable UUID auctionId) {
+		var response = auctionService.getItemsInAuction(auctionId);
+		return ResponseEntity.status(HttpStatus.OK)
+				.body(ApiResponse.<List<ItemResponse>>builder().data(response).build());
+	}
+
+	@GetMapping("/my-auctions")
+	public ResponseEntity<ApiResponse<List<AuctionResponse>>> getMyAuctions(
+			@AuthenticationPrincipal AppUserPrincipal principal) {
+		var appUserId = principal.getUserId();
+		var response = auctionService.getMyAuctions(appUserId);
+		return ResponseEntity.status(HttpStatus.OK)
+				.body(ApiResponse.<List<AuctionResponse>>builder().data(response).build());
 	}
 
 	@GetMapping("/search")

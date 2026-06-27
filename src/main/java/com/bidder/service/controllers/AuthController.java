@@ -6,7 +6,7 @@ import java.util.UUID;
 
 import com.bidder.service.models.request.LoginRequest;
 import com.bidder.service.models.request.RegisterAppUserRequest;
-import com.bidder.service.models.request.ResetPasswordRequest;
+import com.bidder.service.models.request.TokenRequest;
 import com.bidder.service.models.response.ApiResponse;
 import com.bidder.service.service.AuthService;
 import com.bidder.service.service.JwtService;
@@ -51,7 +51,7 @@ public class AuthController {
 	// ToDo: add api rate limiter
 	@PostMapping("/password/reset")
 	public ResponseEntity<ApiResponse<Boolean>> sendPasswordResetLink(
-			@RequestParam(value = "token", required = false) String token, @RequestBody ResetPasswordRequest request)
+			@RequestParam(value = "token", required = false) String token, @RequestBody TokenRequest request)
 			throws IllegalAccessException {
 
 		if (StringUtils.hasLength(token)) {
@@ -64,7 +64,16 @@ public class AuthController {
 	}
 
 	@PostMapping("/verify-account")
-	public ResponseEntity<ApiResponse<UUID>> verifyAccount(@RequestBody RegisterAppUserRequest request) {
-		return null;
+	public ResponseEntity<ApiResponse<Boolean>> verifyAccount(
+			@RequestParam(value = "token", required = false) String token, @RequestBody TokenRequest request)
+			throws IllegalAccessException {
+
+		if (StringUtils.hasLength(token)) {
+			passwordService.verifyAccount(token, request);
+		} else {
+			passwordService.sendAccountVerificationLink(request);
+		}
+
+		return new ResponseEntity<>(ApiResponse.<Boolean>builder().data(true).build(), HttpStatus.OK);
 	}
 }

@@ -4,7 +4,7 @@ package com.bidder.service.models.request;
 
 import com.bidder.service.models.ContactMethod;
 
-public record ResetPasswordRequest(ContactMethod resetMethod, String email, String phoneNumber, String password) {
+public record TokenRequest(ContactMethod contactMethod, String email, String phoneNumber, String password) {
 
 	@Override
 	public String toString() {
@@ -15,6 +15,6 @@ public record ResetPasswordRequest(ContactMethod resetMethod, String email, Stri
 				    phoneNumber: %s,
 				    password: ***
 				}
-				""".formatted(resetMethod, email, phoneNumber);
+				""".formatted(contactMethod, email, phoneNumber);
 	}
 }

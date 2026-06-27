@@ -9,14 +9,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import com.bidder.service.models.AppUser;
-import com.bidder.service.models.ContactMethod;
-import com.bidder.service.models.NotificationType;
-import com.bidder.service.models.PasswordResetToken;
+import com.bidder.service.models.*;
 import com.bidder.service.models.request.NotificationRequest;
-import com.bidder.service.models.request.ResetPasswordRequest;
+import com.bidder.service.models.request.TokenRequest;
+import com.bidder.service.repository.AccessTokenRepository;
 import com.bidder.service.repository.AppUserRepository;
-import com.bidder.service.repository.PasswordResetTokenRepository;
 import com.bidder.service.utils.HashingUtil;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import static com.bidder.service.utils.Constants.Auth.PASSWORD_RESET;
-import static com.bidder.service.utils.Constants.Auth.PASSWORD_RESET_MESSAGE;
+import static com.bidder.service.utils.Constants.Auth.*;
 
 @Slf4j
 @Service
@@ -39,60 +35,91 @@ public class PasswordService {
 	private boolean allowSimplePassword;
 
 	private static final int PASSWORD_RESET_EXPIRY_MINUTES = 15;
+	private static final int ACCOUNT_VERIFICATION_EXPIRY_MINUTES = 60;
 	private static final String PASSWORD_REGEX = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$";
 	private static final Pattern PATTERN = Pattern.compile(PASSWORD_REGEX);
 
 	private final AppUserService appUserService;
 	private final AppUserRepository appUserRepository;
 	private final NotificationService notificationService;
-	private final PasswordResetTokenRepository passwordResetTokenRepository;
+	private final AccessTokenRepository accessTokenRepository;
 
-	public void sendPasswordResetLink(ResetPasswordRequest request) {
-		if (ContactMethod.EMAIL.equals(request.resetMethod())) {
+	public void sendPasswordResetLink(TokenRequest request) {
+		if (ContactMethod.EMAIL.equals(request.contactMethod())) {
 			sendPasswordLinkByEmail(request.email());
-		} else if (ContactMethod.MOBILE.equals(request.resetMethod())) {
+		} else if (ContactMethod.MOBILE.equals(request.contactMethod())) {
 			throw new RuntimeException("Password Reset by mobile not implemented");
 		} else {
 			throw new RuntimeException("Method selected does not exist");
 		}
 	}
 
-	public void resetPassword(String token, ResetPasswordRequest request) throws IllegalAccessException {
+	public void verifyAccount(String token, TokenRequest request) throws IllegalAccessException {
 		var hashedToken = HashingUtil.generateHash(token);
-		AppUser appUser = null;
+		AppUser appUser = getAppUserByContactMethod(request);
 
-		if (ContactMethod.EMAIL.equals(request.resetMethod())) {
-			appUser = appUserService.getAppUserByEmail(request.email());
-		} else if (ContactMethod.MOBILE.equals(request.resetMethod())) {
-			appUser = appUserService.getAppUserByPhoneNumber(request.phoneNumber());
+		var accessToken = accessTokenRepository.findByToken(hashedToken, TokenType.VERIFICATION);
+		validateClientToken(accessToken, token, TokenType.VERIFICATION);
+
+		appUser.setVerifiedAccount(true);
+		appUserRepository.save(appUser);
+		log.info("User account successfully verified");
+
+		accessTokenRepository.delete(accessToken.get());
+
+		notificationService.sendNotification(
+				new NotificationRequest(appUser.getId(), "Account Verified", "Your account was verified",
+						NotificationType.SUCCESS, Set.of(ContactMethod.APP, request.contactMethod())));
+	}
+
+	public void sendAccountVerificationLink(TokenRequest request) {
+		if (ContactMethod.EMAIL.equals(request.contactMethod())) {
+			sendAccountVerificationLinkByEmail(request.email());
+		} else if (ContactMethod.MOBILE.equals(request.contactMethod())) {
+			throw new RuntimeException("Password Reset by mobile not implemented");
 		} else {
-			throw new RuntimeException("Method selected does not exist, user not found");
+			throw new RuntimeException("Method selected does not exist");
+		}
+	}
+
+	private void sendAccountVerificationLinkByEmail(String email) {
+		var appUser = appUserRepository.findByEmail(email);
+
+		if (appUser.isEmpty()) {
+			return;
 		}
 
-		if (appUser == null) {
-			log.error("Failed to reset password, user not found with request: {}", request);
-			throw new IllegalStateException("User not found");
+		var token = generateAndSaveToken(appUser.get(), TokenType.VERIFICATION, ACCOUNT_VERIFICATION_EXPIRY_MINUTES);
+
+		if (token.isEmpty()) {
+			log.info("Account Verification Token already exists for {}", email);
+			return;
 		}
 
-		var passwordResetToken = passwordResetTokenRepository.findByToken(hashedToken);
-		if (passwordResetToken.isEmpty()) {
-			log.error("Failed to reset password, password reset token not found");
-			throw new IllegalAccessException("Invalid link");
-		}
+		var resetUrl = clientUrl + "/verify-account?token=" + token.get();
+		var notificationMessage = String.format(VERIFY_ACCOUNT_MESSAGE, appUser.get().getFirstName(), resetUrl);
 
-		if (LocalDateTime.now().isAfter(passwordResetToken.get().getExpiresAt())) {
-			log.error("Failed to reset password, password reset token expired");
-			throw new IllegalAccessException("Link Expired");
-		}
+		notificationService.sendNotification(new NotificationRequest(appUser.get().getId(), VERIFY_ACCOUNT,
+				notificationMessage, NotificationType.ACTION_REQUIRED, new HashSet<>(List.of(ContactMethod.EMAIL))));
+	}
+
+	public void resetPassword(String token, TokenRequest request) throws IllegalAccessException {
+		var hashedToken = HashingUtil.generateHash(token);
+		AppUser appUser = getAppUserByContactMethod(request);
+
+		var passwordResetToken = accessTokenRepository.findByToken(hashedToken, TokenType.PASSWORD_RESET);
+		validateClientToken(passwordResetToken, token, TokenType.PASSWORD_RESET);
 
 		var hashedPassword = HashingUtil.generateHash(request.password());
 		appUser.setPassword(hashedPassword);
+		appUserRepository.save(appUser);
 		log.info("Password successfully reset");
 
-		passwordResetTokenRepository.delete(passwordResetToken.get());
+		accessTokenRepository.delete(passwordResetToken.get());
 
-		notificationService.sendNotification(new NotificationRequest(appUser.getId(), "Password Reset",
-				"Your password was reset", NotificationType.SUCCESS, Set.of(ContactMethod.APP, request.resetMethod())));
+		notificationService
+				.sendNotification(new NotificationRequest(appUser.getId(), "Password Reset", "Your password was reset",
+						NotificationType.SUCCESS, Set.of(ContactMethod.APP, request.contactMethod())));
 	}
 
 	public boolean isValidPassword(String password) {
@@ -119,7 +146,7 @@ public class PasswordService {
 			return;
 		}
 
-		var token = generateAndSavePasswordResetToken(appUser.get());
+		var token = generateAndSaveToken(appUser.get(), TokenType.PASSWORD_RESET, PASSWORD_RESET_EXPIRY_MINUTES);
 
 		if (token.isEmpty()) {
 			log.info("Password Reset Token already exists for {}", email);
@@ -134,33 +161,61 @@ public class PasswordService {
 	}
 
 	/**
-	 * Generates and saves a hashed password reset token for the user. If a token
-	 * already exists, it will return nothing. A new token will return a value
-	 * 
+	 * Generates and saves a hashed token for the user. If a token already exists,
+	 * it will return nothing. A new token will return a value
+	 *
 	 * @param appUser
 	 * @return token if newly created, return nothing if a token already exists and
 	 *         is unexpired
 	 */
-	private Optional<String> generateAndSavePasswordResetToken(AppUser appUser) {
-		var currentToken = passwordResetTokenRepository.findByAppUserId(appUser.getId());
+	private Optional<String> generateAndSaveToken(AppUser appUser, TokenType tokenType, int expiryMinutes) {
+		var currentToken = accessTokenRepository.findByAppUserId(appUser.getId(), tokenType);
 
 		if (currentToken.isPresent()) {
 			var token = currentToken.get();
 
 			// If the current token is expired, delete and create a new one
 			if (token.isExpired()) {
-				passwordResetTokenRepository.delete(token);
+				accessTokenRepository.delete(token);
 			} else {
 				return Optional.empty();
 			}
 		}
 
 		var token = HashingUtil.generateToken();
-		var passwordResetToken = PasswordResetToken.builder().appUser(appUser).token(HashingUtil.generateHash(token))
-				.expiresAt(LocalDateTime.now().plusMinutes(PASSWORD_RESET_EXPIRY_MINUTES)).build();
-		passwordResetTokenRepository.save(passwordResetToken);
+		var passwordResetToken = AccessToken.builder().appUser(appUser).token(HashingUtil.generateHash(token))
+				.expiresAt(LocalDateTime.now().plusMinutes(expiryMinutes)).tokenType(tokenType).build();
+		accessTokenRepository.save(passwordResetToken);
 		return Optional.of(token);
-
 	}
 
+	private AppUser getAppUserByContactMethod(TokenRequest request) {
+		if (ContactMethod.EMAIL.equals(request.contactMethod())) {
+			return appUserService.getAppUserByEmail(request.email());
+		} else if (ContactMethod.MOBILE.equals(request.contactMethod())) {
+			return appUserService.getAppUserByPhoneNumber(request.phoneNumber());
+		} else {
+			throw new RuntimeException("Method selected does not exist, user not found");
+		}
+	}
+
+	private void validateClientToken(Optional<AccessToken> storedToken, String clientToken, TokenType tokenType)
+			throws IllegalAccessException {
+		if (storedToken.isEmpty()) {
+			log.error("Token not found for incoming token: {}", clientToken);
+			throw new IllegalAccessException("Invalid Access");
+		}
+
+		var token = storedToken.get();
+		if (token.isExpired()) {
+			log.error("Stored token expired for incoming token: {}", clientToken);
+			throw new IllegalAccessException("Link Expired");
+		}
+
+		var hashedIncomingToken = HashingUtil.generateHash(clientToken);
+		if (!token.getToken().equals(hashedIncomingToken) || !token.getTokenType().equals(tokenType)) {
+			log.error("Tokens don't match{}", clientToken);
+			throw new IllegalAccessException("Invalid Token");
+		}
+	}
 }

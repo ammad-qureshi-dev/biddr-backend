@@ -35,4 +35,16 @@ public class AppUser extends BaseEntity {
 
 	// ToDo: to be broken down
 	private String phoneNumber;
+
+	private boolean verifiedAccount;
+
+	public String getFirstName() {
+		var spaceIndex = this.fullName.indexOf(' ');
+
+		if (spaceIndex > 0) {
+			return this.fullName.substring(0, spaceIndex);
+		}
+
+		return "";
+	}
 }

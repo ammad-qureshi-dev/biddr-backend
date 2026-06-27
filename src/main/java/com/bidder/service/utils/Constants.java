@@ -43,5 +43,7 @@ public class Constants {
 		public static final String TOKEN_COOKIE = "token";
 		public static final String PASSWORD_RESET = "Password Reset Request";
 		public static final String PASSWORD_RESET_MESSAGE = "You have requested to reset your password. Please open this link to securely reset your password: %s";
+		public static final String VERIFY_ACCOUNT = "Account Verification Request";
+		public static final String VERIFY_ACCOUNT_MESSAGE = "Hi %s, please click the link below to verify your account: %s";
 	}
 }

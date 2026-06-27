@@ -16,9 +16,9 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(schema = Constants.Database.SCHEMA, name = "password_reset_token")
+@Table(schema = Constants.Database.SCHEMA, name = "access_token")
 @EqualsAndHashCode(callSuper = true)
-public class PasswordResetToken extends BaseEntity {
+public class AccessToken extends BaseEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
 	private UUID id;
@@ -31,6 +31,9 @@ public class PasswordResetToken extends BaseEntity {
 	@NotNull private LocalDateTime expiresAt;
 
 	private LocalDateTime usedAt;
+
+	@Enumerated(EnumType.STRING)
+	private TokenType tokenType;
 
 	public boolean isExpired() {
 		return LocalDateTime.now().isAfter(this.getExpiresAt());

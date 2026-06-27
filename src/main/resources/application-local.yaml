@@ -34,7 +34,9 @@ spring:
         debug: false
         transport:
           protocol: 'smtp'
-
+  output:
+    ansi:
+      enabled: ALWAYS
 server:
   port: 8080
 

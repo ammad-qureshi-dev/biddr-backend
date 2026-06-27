@@ -17,6 +17,7 @@ import com.bidder.service.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import static com.bidder.service.service.NotificationService.ALL_NOTIFICATION_METHODS;
 import static com.bidder.service.utils.Constants.Messages.*;
@@ -103,9 +104,12 @@ public class BidService {
 		bid.setRejectReason(rejectReason);
 		bidRepository.save(bid);
 
+		var message = StringUtils.hasLength(rejectReason)
+				? rejectReason
+				: String.format(BID_REQUEST_REJECTED_MESSAGE, bid.getItem().getTitle());
+
 		notificationService.sendNotification(new NotificationRequest(bid.getBidder().getId(), BID_REQUEST_REJECTED,
-				String.format(BID_REQUEST_REJECTED_MESSAGE, bid.getItem().getTitle()), NotificationType.INFO,
-				ALL_NOTIFICATION_METHODS));
+				message, NotificationType.INFO, ALL_NOTIFICATION_METHODS));
 
 		// If the bid that got rejected was the highest bid, replace it with new highest
 		final var item = bid.getItem();

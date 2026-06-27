@@ -84,6 +84,14 @@ public class JwtService {
 		return headers;
 	}
 
+	public HttpHeaders clearTokenCookieHeader() {
+		var expiredCookie = ResponseCookie.from("token", "").httpOnly(httpOnly).secure(cookiesSecure).path("/")
+				.sameSite(cookiesSameSite).maxAge(Duration.ZERO).build();
+		var headers = new HttpHeaders();
+		headers.add(HttpHeaders.SET_COOKIE, expiredCookie.toString());
+		return headers;
+	}
+
 	private boolean isTokenExpired(String token) {
 		return extractExpiration(token).before(new Date());
 	}

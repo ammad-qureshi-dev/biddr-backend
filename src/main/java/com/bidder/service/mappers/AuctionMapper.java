@@ -10,12 +10,15 @@ public class AuctionMapper {
 
 	public static Auction requestToEntity(AuctionRequest request) {
 		return Auction.builder().title(request.title()).startTime(request.startTime()).endTime(request.endTime())
-				.items(request.biddingItems().stream().map(ItemMapper::requestToEntity).toList()).build();
+				.items(request.biddingItems().stream().map(ItemMapper::requestToEntity).toList())
+				.categories(request.categories()).build();
 	}
 
 	public static AuctionResponse entityToResponse(Auction entity) {
 		var itemsDto = entity.getItems().stream().map(ItemMapper::entityToResponse).toList();
 		return new AuctionResponse(entity.getId(), entity.getOwner().getId(), entity.getTitle(),
-				entity.getAuctionStatus(), itemsDto, entity.getStartTime(), entity.getEndTime());
+				entity.getAuctionStatus(), entity.getCategories(), itemsDto, entity.getStartTime(),
+				entity.getEndTime());
 	}
+
 }

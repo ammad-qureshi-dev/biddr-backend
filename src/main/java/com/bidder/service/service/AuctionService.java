@@ -30,8 +30,8 @@ public class AuctionService {
 
 		final var appUser = appUserService.getAppUserById(appUserId);
 
-		final var auction = Auction.builder().title(request.title()).startTime(request.startTime()).owner(appUser)
-				.endTime(request.endTime()).build();
+		final var auction = AuctionMapper.requestToEntity(request);
+		auction.setOwner(appUser);
 
 		auctionRepository.save(auction);
 
@@ -47,6 +47,7 @@ public class AuctionService {
 		auction.setTitle(request.title());
 		auction.setStartTime(request.startTime());
 		auction.setEndTime(request.endTime());
+		auction.setCategories(request.categories());
 
 		final var newItems = request.biddingItems().stream().filter(e -> e.id() == null).toList().stream()
 				.map(ItemMapper::requestToEntity).toList();

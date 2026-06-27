@@ -43,4 +43,12 @@ public class Auction extends BaseEntity {
 	@Builder.Default
 	@Enumerated(EnumType.STRING)
 	private AuctionStatus auctionStatus = AuctionStatus.OPEN;
+
+	@ElementCollection(targetClass = AuctionCategory.class, fetch = FetchType.EAGER)
+	@CollectionTable(schema = Constants.Database.SCHEMA, name = "auction_category", joinColumns = @JoinColumn(name = "auction_id"))
+	@Enumerated(EnumType.STRING)
+	@Column(name = "category")
+	private List<AuctionCategory> categories;
+
+	// ToDo: add location
 }

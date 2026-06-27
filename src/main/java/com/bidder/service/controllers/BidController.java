@@ -66,8 +66,8 @@ public class BidController {
 	public ResponseEntity<ApiResponse<Boolean>> rejectBid(@PathVariable UUID bidId,
 			@RequestBody BidRejectRequest request, @AuthenticationPrincipal AppUserPrincipal bidder) {
 
-		if (!bidService.isBidOwner(bidId, bidder.getUserId())) {
-			log.error("Cannot reject bid - userId={} does not own bid={}", bidder.getUserId(), bidId);
+		if (bidService.isBidOwner(bidId, bidder.getUserId())) {
+			log.error("Cannot reject you're own bid");
 			return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.<Boolean>builder().data(false).build());
 		}
 

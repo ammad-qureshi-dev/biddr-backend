@@ -48,6 +48,12 @@ public class AuthController {
 		return new ResponseEntity<>(loginResponse, headers, HttpStatus.OK);
 	}
 
+	@PostMapping("/logout")
+	public ResponseEntity<ApiResponse<Boolean>> logout() {
+		return new ResponseEntity<>(ApiResponse.<Boolean>builder().data(true).build(),
+				jwtService.clearTokenCookieHeader(), HttpStatus.OK);
+	}
+
 	// ToDo: add api rate limiter
 	@PostMapping("/password/reset")
 	public ResponseEntity<ApiResponse<Boolean>> sendPasswordResetLink(

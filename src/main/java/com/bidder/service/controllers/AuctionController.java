@@ -23,6 +23,8 @@ import org.springframework.web.bind.annotation.*;
 import static com.bidder.service.utils.Constants.Controller.BASE_URI;
 import static com.bidder.service.utils.Constants.Controller.V1;
 
+// ToDo: reduce outputs and return summaries for bids, auctions, items
+
 @RestController
 @RequestMapping(BASE_URI + V1 + "/auction")
 @RequiredArgsConstructor

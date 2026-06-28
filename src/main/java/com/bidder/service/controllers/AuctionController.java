@@ -11,7 +11,8 @@ import com.bidder.service.models.AuctionStatus;
 import com.bidder.service.models.request.AuctionRequest;
 import com.bidder.service.models.response.ApiResponse;
 import com.bidder.service.models.response.AuctionResponse;
-import com.bidder.service.models.response.ItemResponse;
+import com.bidder.service.models.response.summary.AuctionSummaryResponse;
+import com.bidder.service.models.response.summary.ItemSummaryResponse;
 import com.bidder.service.service.AuctionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -60,29 +61,29 @@ public class AuctionController {
 	}
 
 	@GetMapping("/{auctionId}/items")
-	public ResponseEntity<ApiResponse<List<ItemResponse>>> getAuctionItems(@PathVariable UUID auctionId) {
+	public ResponseEntity<ApiResponse<List<ItemSummaryResponse>>> getAuctionItems(@PathVariable UUID auctionId) {
 		var response = auctionService.getItemsInAuction(auctionId);
 		return ResponseEntity.status(HttpStatus.OK)
-				.body(ApiResponse.<List<ItemResponse>>builder().data(response).build());
+				.body(ApiResponse.<List<ItemSummaryResponse>>builder().data(response).build());
 	}
 
 	@GetMapping("/my-auctions")
-	public ResponseEntity<ApiResponse<List<AuctionResponse>>> getMyAuctions(
+	public ResponseEntity<ApiResponse<List<AuctionSummaryResponse>>> getMyAuctions(
 			@AuthenticationPrincipal AppUserPrincipal principal) {
 		var appUserId = principal.getUserId();
 		var response = auctionService.getMyAuctions(appUserId);
 		return ResponseEntity.status(HttpStatus.OK)
-				.body(ApiResponse.<List<AuctionResponse>>builder().data(response).build());
+				.body(ApiResponse.<List<AuctionSummaryResponse>>builder().data(response).build());
 	}
 
 	@GetMapping("/search")
-	public ResponseEntity<ApiResponse<List<AuctionResponse>>> searchAuctions(
+	public ResponseEntity<ApiResponse<List<AuctionSummaryResponse>>> searchAuctions(
 			@RequestParam(required = false) String title, @RequestParam(required = false) AuctionStatus status,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startAfter,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endBefore) {
 		var results = auctionService.searchAuctions(title, status, startAfter, endBefore);
 		return ResponseEntity.status(HttpStatus.OK)
-				.body(ApiResponse.<List<AuctionResponse>>builder().data(results).build());
+				.body(ApiResponse.<List<AuctionSummaryResponse>>builder().data(results).build());
 	}
 
 }

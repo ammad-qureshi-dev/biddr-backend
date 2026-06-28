@@ -12,7 +12,8 @@ import com.bidder.service.models.Auction;
 import com.bidder.service.models.AuctionStatus;
 import com.bidder.service.models.request.AuctionRequest;
 import com.bidder.service.models.response.AuctionResponse;
-import com.bidder.service.models.response.ItemResponse;
+import com.bidder.service.models.response.summary.AuctionSummaryResponse;
+import com.bidder.service.models.response.summary.ItemSummaryResponse;
 import com.bidder.service.repository.AuctionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -70,10 +71,10 @@ public class AuctionService {
 		return AuctionMapper.entityToResponse(auction);
 	}
 
-	public List<AuctionResponse> searchAuctions(String title, AuctionStatus status, LocalDateTime startAfter,
+	public List<AuctionSummaryResponse> searchAuctions(String title, AuctionStatus status, LocalDateTime startAfter,
 			LocalDateTime endBefore) {
 		return auctionRepository.search(title, status, startAfter, endBefore).stream()
-				.map(AuctionMapper::entityToResponse).toList();
+				.map(AuctionMapper::entityToSummary).toList();
 	}
 
 	public void updateAuctionStatus(UUID auctionId, AuctionStatus status) {
@@ -82,12 +83,12 @@ public class AuctionService {
 		auctionRepository.save(auction);
 	}
 
-	public List<AuctionResponse> getMyAuctions(UUID appUserId) {
+	public List<AuctionSummaryResponse> getMyAuctions(UUID appUserId) {
 		var auctions = auctionRepository.findMyAuctions(appUserId);
-		return auctions.stream().map(AuctionMapper::entityToResponse).toList();
+		return auctions.stream().map(AuctionMapper::entityToSummary).toList();
 	}
 
-	public List<ItemResponse> getItemsInAuction(UUID auctionId) {
+	public List<ItemSummaryResponse> getItemsInAuction(UUID auctionId) {
 		var auction = getAuctionById(auctionId);
 		var items = auction.getItems();
 
@@ -95,7 +96,7 @@ public class AuctionService {
 			return List.of();
 		}
 
-		return items.stream().map(ItemMapper::entityToResponse).toList();
+		return items.stream().map(ItemMapper::entityToSummary).toList();
 	}
 
 	private static void validationAuctionRequest(AuctionRequest request) {

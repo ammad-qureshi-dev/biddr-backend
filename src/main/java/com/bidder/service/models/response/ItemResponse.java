@@ -6,8 +6,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-public record ItemResponse(UUID auctionId, UUID id, String title, String description, BigDecimal minimumPrice,
-		BigDecimal priceSoldAt,
+import com.bidder.service.models.response.summary.BidSummaryResponse;
 
-		BidDto highestBid, List<BidDto> bids, BidDto acceptedBid) {
+public record ItemResponse(UUID id, String title, String description, BigDecimal minimumPrice,
+		BidSummaryResponse highestBid, List<BidSummaryResponse> bids, BigDecimal priceSoldAt) {
 }

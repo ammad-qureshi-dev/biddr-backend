@@ -30,9 +30,9 @@ public class Constants {
 		public static final String WELCOME_TITLE = "Welcome to Biddr";
 		public static final String WELCOME_MESSAGE = "Thanks for signing up! Let's start bidding...";
 		public static final String BID_REQUEST_SENT = "Bid Request Send";
-		public static final String BID_REQUEST_MESSAGE = "Hi, your bid request for %s item in the %s auction has been sent. We'll let you know once this request has been reviewed";
+		public static final String BID_REQUEST_MESSAGE = "Hi, your bid request for %s in the %s auction has been sent. We'll let you know once this request has been reviewed";
 		public static final String BID_REQUEST_UPDATED = "Bid Request Send";
-		public static final String BID_REQUEST_UPDATED_MESSAGE = "Hi, your bid request for item %s was updated at %s. The new bid amount is %.2f.";
+		public static final String BID_REQUEST_UPDATED_MESSAGE = "Hi, you raised a new bid! Your new bid for %s was recently submitted and the new amount is %.2f. Your old bid for has been outbid";
 		public static final String BID_REQUEST_REJECTED = "Bid Request Rejected";
 		public static final String BID_REQUEST_REJECTED_MESSAGE = "Hi, your bid request for item %s was rejected";
 		public static final String BID_REQUEST_ACCEPTED = "Bid Request Accepted";

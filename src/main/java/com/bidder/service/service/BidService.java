@@ -3,15 +3,14 @@ bidder.app */
 package com.bidder.service.service;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 
 import com.bidder.service.mappers.BidMapper;
 import com.bidder.service.models.*;
 import com.bidder.service.models.request.BidRequest;
 import com.bidder.service.models.request.NotificationRequest;
-import com.bidder.service.models.response.BidDto;
-import com.bidder.service.models.response.BidResponse;
+import com.bidder.service.models.response.summary.BidSummaryResponse;
 import com.bidder.service.repository.BidRepository;
 import com.bidder.service.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,55 +33,73 @@ public class BidService {
 	private final NotificationService notificationService;
 
 	@Transactional
-	public BidResponse createBid(BidRequest request, AppUserPrincipal bidder) {
+	public UUID createBid(BidRequest request, AppUserPrincipal bidder) {
 		var auction = auctionService.getAuctionById(request.auctionId());
 		isAuctionOpen(auction);
 
 		var item = itemService.getItemById(request.itemId());
-
-		validateBid(request, auction, bidder.getUserId());
-
 		var bid = BidMapper.requestToEntity(request, auction.getEndTime());
 		bid.setItem(item);
 
-		setBidder(bidder.getUserId(), bid);
+		validateBid(request, auction, bid, bidder.getUserId());
 
+		// Note: we don't have to iterate through every bid and update to OUTBID since
+		// we will always update the highest bid
+
+		var previousHighestBid = item.getHighestBid();
+		if (previousHighestBid != null) {
+			previousHighestBid.setStatus(BidStatus.OUTBID);
+			bidRepository.save(previousHighestBid);
+		}
+
+		item.setHighestBid(bid);
+		itemRepository.save(item);
+
+		setBidder(bidder.getUserId(), bid);
+		bid.setStatus(BidStatus.ACTIVE);
 		bidRepository.save(bid);
 
 		notificationService.sendNotification(new NotificationRequest(bidder.getUserId(), BID_REQUEST_SENT,
 				String.format(BID_REQUEST_MESSAGE, item.getTitle(), auction.getTitle()), NotificationType.SUCCESS,
 				ALL_NOTIFICATION_METHODS));
 
-		return new BidResponse(isHighestBid(bid), bid.getId());
+		return bid.getId();
 	}
 
 	@Transactional
-	public BidResponse updateBid(UUID bidId, BidRequest request, AppUserPrincipal bidder) {
+	public UUID updateBid(UUID bidId, BidRequest request, AppUserPrincipal bidder) {
 		var auction = auctionService.getAuctionById(request.auctionId());
 		isAuctionOpen(auction);
 
-		validateBid(request, auction, bidder.getUserId());
+		var previousBid = getBidById(bidId);
 
-		var bid = getBidById(bidId);
+		validateBid(request, auction, previousBid, bidder.getUserId());
 
-		if (!isOriginalBidder(bid, bidder.getUserId())) {
+		if (!isOriginalBidder(previousBid, bidder.getUserId())) {
 			throw new IllegalStateException("The original bidder can only place this bid");
 		}
 
-		bid.setAmount(request.amount() == null ? bid.getAmount() : request.amount());
-		bid.setAccepted(false);
-		bid.setRejected(false);
-		bid.setActive(true);
-		bid.setExpiresAt(request.expiresAt() == null ? auction.getEndTime() : request.expiresAt());
+		// De-activate old bid
+		previousBid.setStatus(BidStatus.OUTBID);
+		bidRepository.save(previousBid);
 
-		bidRepository.save(bid);
+		// Create a new bid
+		var item = previousBid.getItem();
+		var newBid = BidMapper.requestToEntity(request, auction.getEndTime());
+		newBid.setItem(item);
 
-		notificationService.sendNotification(new NotificationRequest(
-				bidder.getUserId(), BID_REQUEST_UPDATED, String.format(BID_REQUEST_UPDATED_MESSAGE,
-						bid.getItem().getTitle(), bid.getUpdatedAt(), bid.getAmount()),
+		item.setHighestBid(newBid);
+		itemRepository.save(item);
+
+		setBidder(bidder.getUserId(), newBid);
+		newBid.setStatus(BidStatus.ACTIVE);
+		bidRepository.save(newBid);
+
+		notificationService.sendNotification(new NotificationRequest(bidder.getUserId(), BID_REQUEST_UPDATED,
+				String.format(BID_REQUEST_UPDATED_MESSAGE, item.getTitle(), newBid.getAmount()),
 				NotificationType.SUCCESS, ALL_NOTIFICATION_METHODS));
 
-		return new BidResponse(isHighestBid(bid), bid.getId());
+		return newBid.getId();
 	}
 
 	public Bid getBidById(UUID id) {
@@ -99,8 +116,7 @@ public class BidService {
 			throw new IllegalStateException("Bid not found");
 		}
 
-		bid.setActive(false);
-		bid.setRejected(true);
+		bid.setStatus(BidStatus.REJECTED);
 		bid.setRejectReason(rejectReason);
 		bidRepository.save(bid);
 
@@ -114,43 +130,40 @@ public class BidService {
 		// If the bid that got rejected was the highest bid, replace it with new highest
 		final var item = bid.getItem();
 		if (item.getHighestBid().getId().equals(bid.getId())) {
-			item.setHighestBid(findNextHighestUnexpiredBidForItem(item.getId()));
+			var nextBid = findNextHighestUnexpiredBidForItem(item.getId());
+			nextBid.setStatus(BidStatus.ACTIVE);
+			bidRepository.save(nextBid);
+
+			item.setHighestBid(nextBid);
 			itemRepository.save(item);
 		}
 	}
 
 	public Bid findNextHighestUnexpiredBidForItem(UUID itemId) {
-		var activeBids = bidRepository.findActiveBids(itemId);
+		var activeBids = bidRepository.findUnexpiredBids(itemId);
 
 		if (activeBids == null || activeBids.isEmpty()) {
 			return null;
 		}
 
-		return activeBids.stream().max(Comparator.comparing(Bid::getAmount)).orElseThrow();
+		return activeBids.getFirst();
 	}
 
 	public void acceptBid(UUID bidId) {
 		final var acceptedBid = getBidById(bidId);
-
-		final var auction = acceptedBid.getItem().getAuction();
+		final var item = acceptedBid.getItem();
+		final var auction = item.getAuction();
 		isAuctionOpen(auction);
-
-		final var item = itemService.getItemById(acceptedBid.getItem().getId());
 
 		if (item.getAcceptedBid() != null) {
 			throw new IllegalStateException("Cannot accept anymore bids, a bid for this item has been selected");
 		}
 
-		if (!acceptedBid.isActive()) {
-			throw new IllegalStateException("This bid cannot be accepted, it is in-active");
-		} else if (acceptedBid.isRejected()) {
-			throw new IllegalStateException("This bid cannot be accepted, it has been rejected");
+		if (!BidStatus.ACTIVE.equals(acceptedBid.getStatus()) || !item.getHighestBid().getId().equals(bidId)) {
+			throw new IllegalStateException("This bid cannot be accepted, it is not the highest bid");
 		}
 
-		acceptedBid.setAccepted(true);
-		acceptedBid.setActive(false);
-		acceptedBid.setRejected(false);
-
+		acceptedBid.setStatus(BidStatus.WINNER);
 		bidRepository.save(acceptedBid);
 
 		item.setAcceptedBid(acceptedBid);
@@ -168,32 +181,39 @@ public class BidService {
 		return bid.getBidder().getId().equals(user.getId());
 	}
 
-	public BidDto getBid(UUID bidId) {
-		return BidMapper.entityToRequest(getBidById(bidId));
+	public BidSummaryResponse getBid(UUID bidId) {
+		return BidMapper.entityToSummary(getBidById(bidId));
+	}
+
+	public List<BidSummaryResponse> getMyBids(UUID appUserId) {
+		var myBids = bidRepository.findBidsByBidderId(appUserId);
+		return myBids.stream().map(BidMapper::entityToSummary).toList();
 	}
 
 	private boolean isHighestBid(Bid newBid) {
-		var item = itemService.getItemById(newBid.getItem().getId());
+		var item = newBid.getItem();
 		var current = item.getHighestBid();
+
+		if (current != null && newBid.getAmount().equals(current.getAmount())) {
+			return true;
+		}
 
 		boolean meetsMinimum = newBid.getAmount().compareTo(item.getMinimumPrice()) >= 0;
 
-		boolean isHighest = meetsMinimum && (current == null || newBid.getAmount().compareTo(current.getAmount()) > 0
+		return meetsMinimum && (current == null || newBid.getAmount().compareTo(current.getAmount()) > 0
 				|| (newBid.getAmount().compareTo(current.getAmount()) == 0
 						&& newBid.getPlacedAt().isBefore(current.getPlacedAt())));
-
-		if (isHighest) {
-			item.setHighestBid(newBid);
-		}
-
-		return isHighest;
 	}
 
 	private boolean isOriginalBidder(Bid bid, UUID bidderId) {
 		return bid.getBidder().getId().equals(bidderId);
 	}
 
-	private void validateBid(BidRequest request, Auction auction, UUID bidderId) {
+	private void validateBid(BidRequest request, Auction auction, Bid newBid, UUID bidderId) {
+
+		if (!isHighestBid(newBid)) {
+			throw new IllegalStateException("Bid amount must be higher than the current highest bid");
+		}
 
 		if (bidderId.equals(auction.getOwner().getId())) {
 			throw new IllegalStateException("Owner cannot place bids on their items");

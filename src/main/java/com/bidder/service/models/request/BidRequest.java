@@ -9,19 +9,6 @@ import java.util.UUID;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 
-public record BidRequest(@NotNull UUID auctionId,
-
-		@NotNull UUID itemId,
-
-		@NotNull @DecimalMin("0.0") BigDecimal amount,
-
-		LocalDateTime placedAt,
-
-		Boolean accepted, Boolean rejected, Boolean active,
-
-		LocalDateTime expiresAt,
-
-		String rejectReason
-
-) {
+public record BidRequest(@NotNull UUID auctionId, @NotNull UUID itemId, @NotNull @DecimalMin("0.0") BigDecimal amount,
+		LocalDateTime expiresAt) {
 }

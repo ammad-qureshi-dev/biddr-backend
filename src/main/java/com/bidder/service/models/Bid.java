@@ -37,13 +37,10 @@ public class Bid extends BaseEntity {
 	@NotNull @DecimalMin("0.0")
 	private BigDecimal amount;
 
-	private boolean accepted;
+	@Enumerated(EnumType.STRING)
+	private BidStatus status;
 
-	private boolean rejected;
 	private String rejectReason;
-
-	@Builder.Default
-	private boolean active = true;
 
 	// Field populated from the Client
 	private LocalDateTime placedAt;

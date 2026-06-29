@@ -2,14 +2,14 @@
 bidder.app */
 package com.bidder.service.controllers;
 
+import java.util.List;
 import java.util.UUID;
 
 import com.bidder.service.models.AppUserPrincipal;
 import com.bidder.service.models.request.BidRejectRequest;
 import com.bidder.service.models.request.BidRequest;
 import com.bidder.service.models.response.ApiResponse;
-import com.bidder.service.models.response.BidDto;
-import com.bidder.service.models.response.BidResponse;
+import com.bidder.service.models.response.summary.BidSummaryResponse;
 import com.bidder.service.service.BidService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,15 +30,14 @@ public class BidController {
 	private final BidService bidService;
 
 	@PostMapping
-	public ResponseEntity<ApiResponse<BidResponse>> createBid(@AuthenticationPrincipal AppUserPrincipal bidder,
+	public ResponseEntity<ApiResponse<UUID>> createBid(@AuthenticationPrincipal AppUserPrincipal bidder,
 			@RequestBody BidRequest request) {
 		var response = bidService.createBid(request, bidder);
-		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(ApiResponse.<BidResponse>builder().data(response).build());
+		return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.<UUID>builder().data(response).build());
 	}
 
 	@PutMapping("/{bidId}")
-	public ResponseEntity<ApiResponse<BidResponse>> updateBid(@PathVariable UUID bidId, @RequestBody BidRequest request,
+	public ResponseEntity<ApiResponse<UUID>> updateBid(@PathVariable UUID bidId, @RequestBody BidRequest request,
 			@AuthenticationPrincipal AppUserPrincipal bidder) {
 		if (!bidService.isBidOwner(bidId, bidder.getUserId())) {
 			log.error("Cannot update bid - userId={} does not own bid={}", bidder.getUserId(), bidId);
@@ -46,7 +45,7 @@ public class BidController {
 		}
 
 		var response = bidService.updateBid(bidId, request, bidder);
-		return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.<BidResponse>builder().data(response).build());
+		return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.<UUID>builder().data(response).build());
 	}
 
 	@PostMapping("/accept/{bidId}")
@@ -76,8 +75,17 @@ public class BidController {
 	}
 
 	@GetMapping("/{bidId}")
-	public ResponseEntity<ApiResponse<BidDto>> getBidById(@PathVariable UUID bidId) {
+	public ResponseEntity<ApiResponse<BidSummaryResponse>> getBidById(@PathVariable UUID bidId) {
 		var bid = bidService.getBid(bidId);
-		return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.<BidDto>builder().data(bid).build());
+		return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.<BidSummaryResponse>builder().data(bid).build());
+	}
+
+	@GetMapping("/my-bids")
+	public ResponseEntity<ApiResponse<List<BidSummaryResponse>>> getMyBids(
+			@AuthenticationPrincipal AppUserPrincipal principal) {
+		var appUserId = principal.getUserId();
+		var myBids = bidService.getMyBids(appUserId);
+		return ResponseEntity.status(HttpStatus.OK)
+				.body(ApiResponse.<List<BidSummaryResponse>>builder().data(myBids).build());
 	}
 }

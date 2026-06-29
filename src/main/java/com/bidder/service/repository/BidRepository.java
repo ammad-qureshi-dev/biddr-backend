@@ -16,8 +16,7 @@ public interface BidRepository extends JpaRepository<Bid, UUID> {
 	@Query("""
 			select distinct b.item
 			from Bid b
-			where b.active = true
-			and b.expiresAt <= CURRENT_TIMESTAMP
+			where b.expiresAt <= CURRENT_TIMESTAMP
 			""")
 	List<Item> findItemsWithExpiredBids();
 
@@ -25,10 +24,17 @@ public interface BidRepository extends JpaRepository<Bid, UUID> {
 			select b
 			from Bid b
 			where b.item.id = :itemId
-			and b.active = true
 			and b.expiresAt > CURRENT_TIMESTAMP
-			and b.rejected = false
-			and b.accepted = false
+			and b.status in (com.bidder.service.models.BidStatus.ACTIVE, com.bidder.service.models.BidStatus.OUTBID)
+			order by b.amount desc
 			""")
-	List<Bid> findActiveBids(@Param("itemId") UUID itemId);
+	List<Bid> findUnexpiredBids(@Param("itemId") UUID itemId);
+
+	@Query("""
+			select b
+			from Bid b
+			where b.bidder.id = :bidderId
+			order by b.placedAt
+			""")
+	List<Bid> findBidsByBidderId(@Param("bidderId") UUID bidderId);
 }

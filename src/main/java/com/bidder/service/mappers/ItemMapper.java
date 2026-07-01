@@ -2,9 +2,6 @@
 bidder.app */
 package com.bidder.service.mappers;
 
-import java.util.Collections;
-import java.util.List;
-
 import com.bidder.service.models.Item;
 import com.bidder.service.models.request.BiddingItemRequest;
 import com.bidder.service.models.response.ItemResponse;
@@ -25,15 +22,10 @@ public class ItemMapper {
 			return null;
 		}
 
-		List<BidSummaryResponse> bids = Collections.emptyList();
-		if (!entity.getBids().isEmpty()) {
-			bids = entity.getBids().stream().map(BidMapper::entityToSummary).toList();
-		}
-
 		BidSummaryResponse highestBid = BidMapper.entityToSummary(entity.getHighestBid());
 
 		return new ItemResponse(entity.getId(), entity.getTitle(), entity.getDescription(), entity.getMinimumPrice(),
-				highestBid, bids, entity.getPriceSoldAt());
+				highestBid, entity.getBids().size(), entity.getPriceSoldAt());
 	}
 
 	public static ItemSummaryResponse entityToSummary(Item i) {

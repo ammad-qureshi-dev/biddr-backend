@@ -23,6 +23,6 @@ public class BidMapper {
 		var item = b.getItem();
 
 		return new BidSummaryResponse(b.getId(), item.getId(), item.getTitle(), b.getAmount(), b.getStatus(),
-				b.getPlacedAt(), b.getExpiresAt());
+				b.getStatusDescription(), b.getPlacedAt(), b.getExpiresAt());
 	}
 }

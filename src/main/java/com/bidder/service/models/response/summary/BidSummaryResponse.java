@@ -9,5 +9,5 @@ import java.util.UUID;
 import com.bidder.service.models.BidStatus;
 
 public record BidSummaryResponse(UUID id, UUID itemId, String itemName, BigDecimal amount, BidStatus status,
-		LocalDateTime placedAt, LocalDateTime expiresAt) {
+		String statusDescription, LocalDateTime placedAt, LocalDateTime expiresAt) {
 }

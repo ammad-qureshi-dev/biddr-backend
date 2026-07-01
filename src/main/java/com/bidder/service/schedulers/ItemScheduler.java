@@ -36,10 +36,13 @@ public class ItemScheduler {
 
 		itemsWithExpiredBids.forEach(i -> {
 			var prevHighestBid = i.getHighestBid();
-			bidService.rejectBid(prevHighestBid.getId(), REJECT_REASON_BID_EXPIRED);
+
+			if (prevHighestBid != null) {
+				bidService.rejectBid(prevHighestBid.getId(), REJECT_REASON_BID_EXPIRED);
+			}
 
 			var nextHighestUnexpiredBid = bidService.findNextHighestUnexpiredBidForItem(i.getId());
-			i.setHighestBid(nextHighestUnexpiredBid);
+			nextHighestUnexpiredBid.ifPresent(i::setHighestBid);
 		});
 
 		log.info("ItemScheduler: recomputeHighestBidsAfterBidExpires job completed");

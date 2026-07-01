@@ -40,7 +40,7 @@ public class Bid extends BaseEntity {
 	@Enumerated(EnumType.STRING)
 	private BidStatus status;
 
-	private String rejectReason;
+	private String statusDescription;
 
 	// Field populated from the Client
 	private LocalDateTime placedAt;

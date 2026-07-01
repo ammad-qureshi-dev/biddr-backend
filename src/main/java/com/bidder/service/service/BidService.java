@@ -4,6 +4,7 @@ package com.bidder.service.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import com.bidder.service.mappers.BidMapper;
@@ -117,7 +118,7 @@ public class BidService {
 		}
 
 		bid.setStatus(BidStatus.REJECTED);
-		bid.setRejectReason(rejectReason);
+		bid.setStatusDescription(rejectReason);
 		bidRepository.save(bid);
 
 		var message = StringUtils.hasLength(rejectReason)
@@ -131,22 +132,28 @@ public class BidService {
 		final var item = bid.getItem();
 		if (item.getHighestBid().getId().equals(bid.getId())) {
 			var nextBid = findNextHighestUnexpiredBidForItem(item.getId());
-			nextBid.setStatus(BidStatus.ACTIVE);
-			bidRepository.save(nextBid);
 
-			item.setHighestBid(nextBid);
+			if (nextBid.isEmpty()) {
+				item.setHighestBid(null);
+			} else {
+				var b = nextBid.get();
+				b.setStatus(BidStatus.ACTIVE);
+				bidRepository.save(b);
+				item.setHighestBid(b);
+			}
+
 			itemRepository.save(item);
 		}
 	}
 
-	public Bid findNextHighestUnexpiredBidForItem(UUID itemId) {
+	public Optional<Bid> findNextHighestUnexpiredBidForItem(UUID itemId) {
 		var activeBids = bidRepository.findUnexpiredBids(itemId);
 
 		if (activeBids == null || activeBids.isEmpty()) {
-			return null;
+			return Optional.empty();
 		}
 
-		return activeBids.getFirst();
+		return Optional.of(activeBids.getFirst());
 	}
 
 	public void acceptBid(UUID bidId) {
@@ -188,6 +195,11 @@ public class BidService {
 	public List<BidSummaryResponse> getMyBids(UUID appUserId) {
 		var myBids = bidRepository.findBidsByBidderId(appUserId);
 		return myBids.stream().map(BidMapper::entityToSummary).toList();
+	}
+
+	public List<BidSummaryResponse> getBidsForItem(UUID itemId) {
+		var item = itemService.getItemById(itemId);
+		return item.getBids().stream().map(BidMapper::entityToSummary).toList();
 	}
 
 	private boolean isHighestBid(Bid newBid) {

@@ -2,16 +2,10 @@
 bidder.app */
 package com.bidder.service.service;
 
-import java.util.HashSet;
-import java.util.List;
-
 import com.bidder.service.mappers.AppUserMapper;
 import com.bidder.service.models.AppUser;
 import com.bidder.service.models.AppUserPrincipal;
-import com.bidder.service.models.ContactMethod;
-import com.bidder.service.models.NotificationType;
 import com.bidder.service.models.request.LoginRequest;
-import com.bidder.service.models.request.NotificationRequest;
 import com.bidder.service.models.request.RegisterAppUserRequest;
 import com.bidder.service.models.response.AuthResponse;
 import com.bidder.service.repository.AppUserRepository;
@@ -24,8 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static com.bidder.service.utils.Constants.ExceptionMessages.INVALID_CREDENTIALS;
 import static com.bidder.service.utils.Constants.ExceptionMessages.INVALID_PASSWORD_FORMAT;
-import static com.bidder.service.utils.Constants.Messages.WELCOME_MESSAGE;
-import static com.bidder.service.utils.Constants.Messages.WELCOME_TITLE;
 
 @Slf4j
 @Service
@@ -35,7 +27,6 @@ public class AuthService {
 	private final AppUserRepository appUserRepository;
 	private final JwtService jwtService;
 	private final PasswordService passwordService;
-	private final NotificationService notificationService;
 
 	@Transactional
 	public AuthResponse appUserRegistration(RegisterAppUserRequest request) {
@@ -47,9 +38,7 @@ public class AuthService {
 		var token = jwtService.generateToken(
 				AppUserPrincipal.builder().userId(user.getId()).username(getUsernameForSecurity(request)).build());
 
-		notificationService.sendNotification(
-				new NotificationRequest(user.getId(), WELCOME_TITLE, WELCOME_MESSAGE, NotificationType.SUCCESS,
-						new HashSet<>(List.of(ContactMethod.APP, ContactMethod.EMAIL, ContactMethod.MOBILE))));
+		// ToDo: kafka call for WELCOME_REGISTRATION_EMAIL (all contact methods)
 
 		return new AuthResponse(token, user.getId());
 	}

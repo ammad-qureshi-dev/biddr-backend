@@ -10,7 +10,6 @@ import java.util.UUID;
 import com.bidder.service.mappers.BidMapper;
 import com.bidder.service.models.*;
 import com.bidder.service.models.request.BidRequest;
-import com.bidder.service.models.request.NotificationRequest;
 import com.bidder.service.models.response.summary.BidSummaryResponse;
 import com.bidder.service.repository.BidRepository;
 import com.bidder.service.repository.ItemRepository;
@@ -19,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import static com.bidder.service.service.NotificationService.ALL_NOTIFICATION_METHODS;
 import static com.bidder.service.utils.Constants.Messages.*;
 
 @Service
@@ -31,7 +29,6 @@ public class BidService {
 	private final BidRepository bidRepository;
 	private final ItemService itemService;
 	private final ItemRepository itemRepository;
-	private final NotificationService notificationService;
 
 	@Transactional
 	public UUID createBid(BidRequest request, AppUserPrincipal bidder) {
@@ -60,9 +57,7 @@ public class BidService {
 		bid.setStatus(BidStatus.ACTIVE);
 		bidRepository.save(bid);
 
-		notificationService.sendNotification(new NotificationRequest(bidder.getUserId(), BID_REQUEST_SENT,
-				String.format(BID_REQUEST_MESSAGE, item.getTitle(), auction.getTitle()), NotificationType.SUCCESS,
-				ALL_NOTIFICATION_METHODS));
+		// ToDo: kafka call for BID_REQUEST_SENT
 
 		return bid.getId();
 	}
@@ -96,9 +91,7 @@ public class BidService {
 		newBid.setStatus(BidStatus.ACTIVE);
 		bidRepository.save(newBid);
 
-		notificationService.sendNotification(new NotificationRequest(bidder.getUserId(), BID_REQUEST_UPDATED,
-				String.format(BID_REQUEST_UPDATED_MESSAGE, item.getTitle(), newBid.getAmount()),
-				NotificationType.SUCCESS, ALL_NOTIFICATION_METHODS));
+		// ToDo: kafka call for BID_REQUEST_UPDATED
 
 		return newBid.getId();
 	}
@@ -125,8 +118,7 @@ public class BidService {
 				? rejectReason
 				: String.format(BID_REQUEST_REJECTED_MESSAGE, bid.getItem().getTitle());
 
-		notificationService.sendNotification(new NotificationRequest(bid.getBidder().getId(), BID_REQUEST_REJECTED,
-				message, NotificationType.INFO, ALL_NOTIFICATION_METHODS));
+		// ToDo: kafka call for BID_REQUEST_SENT
 
 		// If the bid that got rejected was the highest bid, replace it with new highest
 		final var item = bid.getItem();
@@ -177,9 +169,7 @@ public class BidService {
 
 		itemRepository.save(item);
 
-		notificationService.sendNotification(new NotificationRequest(acceptedBid.getBidder().getId(),
-				BID_REQUEST_ACCEPTED, String.format(BID_REQUEST_ACCEPTED_MESSAGE, acceptedBid.getItem().getTitle()),
-				NotificationType.INFO, ALL_NOTIFICATION_METHODS));
+		// ToDo: kafka call for BID_REQUEST_accepted
 	}
 
 	public boolean isBidOwner(UUID bidId, UUID userId) {

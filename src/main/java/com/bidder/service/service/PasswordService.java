@@ -3,14 +3,10 @@ bidder.app */
 package com.bidder.service.service;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 import com.bidder.service.models.*;
-import com.bidder.service.models.request.NotificationRequest;
 import com.bidder.service.models.request.TokenRequest;
 import com.bidder.service.repository.AccessTokenRepository;
 import com.bidder.service.repository.AppUserRepository;
@@ -41,7 +37,6 @@ public class PasswordService {
 
 	private final AppUserService appUserService;
 	private final AppUserRepository appUserRepository;
-	private final NotificationService notificationService;
 	private final AccessTokenRepository accessTokenRepository;
 
 	public void sendPasswordResetLink(TokenRequest request) {
@@ -67,9 +62,8 @@ public class PasswordService {
 
 		accessTokenRepository.delete(accessToken.get());
 
-		notificationService.sendNotification(
-				new NotificationRequest(appUser.getId(), "Account Verified", "Your account was verified",
-						NotificationType.SUCCESS, Set.of(ContactMethod.APP, request.contactMethod())));
+		// ToDo: kafka event for account_verified
+
 	}
 
 	public void sendAccountVerificationLink(TokenRequest request) {
@@ -97,10 +91,8 @@ public class PasswordService {
 		}
 
 		var resetUrl = clientUrl + "/verify-account?token=" + token.get();
-		var notificationMessage = String.format(VERIFY_ACCOUNT_MESSAGE, appUser.get().getFirstName(), resetUrl);
 
-		notificationService.sendNotification(new NotificationRequest(appUser.get().getId(), VERIFY_ACCOUNT,
-				notificationMessage, NotificationType.ACTION_REQUIRED, new HashSet<>(List.of(ContactMethod.EMAIL))));
+		// ToDo: kafka event for verify_account
 	}
 
 	public void resetPassword(String token, TokenRequest request) throws IllegalAccessException {
@@ -117,9 +109,7 @@ public class PasswordService {
 
 		accessTokenRepository.delete(passwordResetToken.get());
 
-		notificationService
-				.sendNotification(new NotificationRequest(appUser.getId(), "Password Reset", "Your password was reset",
-						NotificationType.SUCCESS, Set.of(ContactMethod.APP, request.contactMethod())));
+		// toDo: kafka event for password was reset
 	}
 
 	public boolean isValidPassword(String password) {
@@ -156,8 +146,7 @@ public class PasswordService {
 		var resetUrl = clientUrl + "/password/reset?token=" + token.get();
 		var notificationMessage = String.format(PASSWORD_RESET_MESSAGE, resetUrl);
 
-		notificationService.sendNotification(new NotificationRequest(appUser.get().getId(), PASSWORD_RESET,
-				notificationMessage, NotificationType.ACTION_REQUIRED, new HashSet<>(List.of(ContactMethod.EMAIL))));
+		// ToDo: kafka event for password_reset
 	}
 
 	/**

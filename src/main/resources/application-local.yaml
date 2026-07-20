@@ -45,8 +45,6 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
-
-
 server:
   port: 8080
 
@@ -61,3 +59,6 @@ cookies:
 auth:
   registration-pwd:
     allow-simple: true
+
+client:
+  url: http://locahost:3000

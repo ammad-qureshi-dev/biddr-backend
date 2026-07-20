@@ -14,6 +14,7 @@ import com.bidder.service.utils.HashingUtil;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import models.ContactType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +25,7 @@ import static com.bidder.service.utils.Constants.Auth.*;
 @RequiredArgsConstructor
 public class PasswordService {
 
-	@Value("${CLIENT_URL}")
+	@Value("${client.url}")
 	private String clientUrl;
 
 	@Value("${auth.registration-pwd.allow-simple}")
@@ -40,9 +41,9 @@ public class PasswordService {
 	private final AccessTokenRepository accessTokenRepository;
 
 	public void sendPasswordResetLink(TokenRequest request) {
-		if (ContactMethod.EMAIL.equals(request.contactMethod())) {
+		if (ContactType.EMAIL.equals(request.contactMethod())) {
 			sendPasswordLinkByEmail(request.email());
-		} else if (ContactMethod.MOBILE.equals(request.contactMethod())) {
+		} else if (ContactType.PHONE.equals(request.contactMethod())) {
 			throw new RuntimeException("Password Reset by mobile not implemented");
 		} else {
 			throw new RuntimeException("Method selected does not exist");
@@ -67,9 +68,9 @@ public class PasswordService {
 	}
 
 	public void sendAccountVerificationLink(TokenRequest request) {
-		if (ContactMethod.EMAIL.equals(request.contactMethod())) {
+		if (ContactType.EMAIL.equals(request.contactMethod())) {
 			sendAccountVerificationLinkByEmail(request.email());
-		} else if (ContactMethod.MOBILE.equals(request.contactMethod())) {
+		} else if (ContactType.PHONE.equals(request.contactMethod())) {
 			throw new RuntimeException("Password Reset by mobile not implemented");
 		} else {
 			throw new RuntimeException("Method selected does not exist");
@@ -179,9 +180,9 @@ public class PasswordService {
 	}
 
 	private AppUser getAppUserByContactMethod(TokenRequest request) {
-		if (ContactMethod.EMAIL.equals(request.contactMethod())) {
+		if (ContactType.EMAIL.equals(request.contactMethod())) {
 			return appUserService.getAppUserByEmail(request.email());
-		} else if (ContactMethod.MOBILE.equals(request.contactMethod())) {
+		} else if (ContactType.PHONE.equals(request.contactMethod())) {
 			return appUserService.getAppUserByPhoneNumber(request.phoneNumber());
 		} else {
 			throw new RuntimeException("Method selected does not exist, user not found");

@@ -4,6 +4,7 @@ package com.bidder.service.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,6 +15,10 @@ import com.bidder.service.models.response.summary.BidSummaryResponse;
 import com.bidder.service.repository.BidRepository;
 import com.bidder.service.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
+import models.TemplateName;
+import models.dtos.request.SendNotificationRequest;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -29,6 +34,11 @@ public class BidService {
 	private final BidRepository bidRepository;
 	private final ItemService itemService;
 	private final ItemRepository itemRepository;
+
+	private final KafkaTemplate<String, Object> kafkaTemplate;
+
+	@Value("${client.url}")
+	private String clientUrl;
 
 	@Transactional
 	public UUID createBid(BidRequest request, AppUserPrincipal bidder) {
@@ -57,7 +67,13 @@ public class BidService {
 		bid.setStatus(BidStatus.ACTIVE);
 		bidRepository.save(bid);
 
-		// ToDo: kafka call for BID_REQUEST_SENT
+		var appUser = auction.getOwner();
+		var notificationRequest = new SendNotificationRequest(appUser.getId(), TemplateName.BID_REQUEST_SENT,
+				appUserService.getPreferredContactType(appUser),
+				Map.of("fullName", appUser.getFullName(), "bidAmount", bid.getAmount(), "itemName", item.getTitle(),
+						"auctionUrl", clientUrl + "/auctions/" + auction.getId()));
+
+		kafkaTemplate.send("notification", notificationRequest);
 
 		return bid.getId();
 	}

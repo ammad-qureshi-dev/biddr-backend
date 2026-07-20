@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import models.ContactType;
 import models.TemplateName;
 import models.dtos.request.SendNotificationRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
@@ -31,21 +32,30 @@ import static com.bidder.service.utils.Constants.ExceptionMessages.INVALID_PASSW
 public class AuthService {
 
 	private final AppUserRepository appUserRepository;
+	private final AppUserService appUserService;
 	private final JwtService jwtService;
 	private final PasswordService passwordService;
 	private final KafkaTemplate<String, Object> kafkaTemplate;
+
+	@Value("${client.url}")
+	private String clientUrl;
 
 	@Transactional
 	public AuthResponse appUserRegistration(RegisterAppUserRequest request) {
 		validateAppUserRequest(request);
 
 		var user = AppUserMapper.requestToEntity(request);
+
 		appUserRepository.save(user);
 
 		var token = jwtService.generateToken(
 				AppUserPrincipal.builder().userId(user.getId()).username(getUsernameForSecurity(request)).build());
 
-		// ToDo: kafka call for WELCOME_REGISTRATION_EMAIL (all contact methods)
+		var notificationRequest = new SendNotificationRequest(user.getId(), TemplateName.WELCOME_REGISTRATION,
+				retrieveDefaultContactTypeFromRegistration(request),
+				Map.of("fullName", user.getFullName(), "appUrl", clientUrl));
+		kafkaTemplate.send("notification", notificationRequest);
+
 		return new AuthResponse(token, user.getId());
 	}
 
@@ -72,12 +82,6 @@ public class AuthService {
 
 		var token = jwtService.generateToken(
 				AppUserPrincipal.builder().userId(appUser.getId()).username(getUsernameForSecurity(request)).build());
-
-		// ToDo: remove, this is for testing purposes
-		var notificationRequest = new SendNotificationRequest(appUser.getId(), TemplateName.WELCOME_REGISTRATION,
-				Map.of(ContactType.APP, ""), Map.of("fullName", appUser.getFullName()));
-
-		kafkaTemplate.send("notification", notificationRequest);
 
 		return new AuthResponse(token, appUser.getId());
 	}
@@ -107,5 +111,20 @@ public class AuthService {
 			var req = (LoginRequest) request;
 			return req.email() != null ? req.email() : req.phoneNumber();
 		}
+	}
+
+	private static Map<ContactType, String> retrieveDefaultContactTypeFromRegistration(RegisterAppUserRequest request) {
+		if (request == null) {
+			log.error("Registration request not found. Cannot derive contact type from registration request");
+			throw new RuntimeException("Request not found");
+		}
+
+		if (request.email() != null) {
+			return Map.of(ContactType.EMAIL, request.email());
+		} else if (request.phoneNumber() != null) {
+			return Map.of(ContactType.EMAIL, request.phoneNumber());
+		}
+
+		throw new RuntimeException("No contact type found from registration request");
 	}
 }

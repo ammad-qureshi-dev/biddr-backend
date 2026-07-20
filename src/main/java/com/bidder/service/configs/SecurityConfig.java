@@ -30,7 +30,7 @@ public class SecurityConfig {
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 	private final AuthenticationProvider authenticationProvider;
 
-	@Value("${CLIENT_URL}")
+	@Value("${client.url}")
 	private String clientUrl;
 
 	@Bean

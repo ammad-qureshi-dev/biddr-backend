@@ -2,9 +2,9 @@
 bidder.app */
 package com.bidder.service.models.request;
 
-import com.bidder.service.models.ContactMethod;
+import models.ContactType;
 
-public record TokenRequest(ContactMethod contactMethod, String email, String phoneNumber, String password) {
+public record TokenRequest(ContactType contactMethod, String email, String phoneNumber, String password) {
 
 	@Override
 	public String toString() {

@@ -37,6 +37,7 @@ public class Constants {
 		public static final String BID_REQUEST_REJECTED_MESSAGE = "Hi, your bid request for item %s was rejected";
 		public static final String BID_REQUEST_ACCEPTED = "Bid Request Accepted";
 		public static final String BID_REQUEST_ACCEPTED_MESSAGE = "Hi, your bid request for item %s was accepted";
+		public static final String NOT_APPLICABLE = "N/A";
 	}
 
 	public static class Auth {

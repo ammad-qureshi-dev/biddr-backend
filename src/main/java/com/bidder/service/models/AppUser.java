@@ -6,9 +6,11 @@ import java.util.List;
 import java.util.UUID;
 
 import com.bidder.service.utils.Constants;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import models.ContactType;
 
 @Setter
 @Getter
@@ -37,6 +39,9 @@ public class AppUser extends BaseEntity {
 	private String phoneNumber;
 
 	private boolean verifiedAccount;
+
+	@Nullable @Enumerated(EnumType.STRING)
+	private ContactType preferredContactMethod;
 
 	public String getFirstName() {
 		var spaceIndex = this.fullName.indexOf(' ');

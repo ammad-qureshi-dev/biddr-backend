@@ -11,10 +11,16 @@ import com.bidder.service.models.response.AuthResponse;
 import com.bidder.service.repository.AppUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import models.ContactType;
+import models.TemplateName;
+import models.dtos.request.SendNotificationRequest;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
 
 import static com.bidder.service.utils.Constants.ExceptionMessages.INVALID_CREDENTIALS;
 import static com.bidder.service.utils.Constants.ExceptionMessages.INVALID_PASSWORD_FORMAT;
@@ -27,6 +33,7 @@ public class AuthService {
 	private final AppUserRepository appUserRepository;
 	private final JwtService jwtService;
 	private final PasswordService passwordService;
+	private final KafkaTemplate<String, Object> kafkaTemplate;
 
 	@Transactional
 	public AuthResponse appUserRegistration(RegisterAppUserRequest request) {
@@ -39,7 +46,6 @@ public class AuthService {
 				AppUserPrincipal.builder().userId(user.getId()).username(getUsernameForSecurity(request)).build());
 
 		// ToDo: kafka call for WELCOME_REGISTRATION_EMAIL (all contact methods)
-
 		return new AuthResponse(token, user.getId());
 	}
 
@@ -66,6 +72,15 @@ public class AuthService {
 
 		var token = jwtService.generateToken(
 				AppUserPrincipal.builder().userId(appUser.getId()).username(getUsernameForSecurity(request)).build());
+
+		// ToDo: remove, this is for testing purposes
+		var notificationRequest = new SendNotificationRequest(
+				appUser.getId(), TemplateName.WELCOME_REGISTRATION,
+				Map.of(ContactType.APP, ""),
+				Map.of("fullName", appUser.getFullName())
+		);
+
+		kafkaTemplate.send("notification", notificationRequest);
 
 		return new AuthResponse(token, appUser.getId());
 	}

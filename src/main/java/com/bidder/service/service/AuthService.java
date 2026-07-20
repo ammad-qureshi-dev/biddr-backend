@@ -2,6 +2,8 @@
 bidder.app */
 package com.bidder.service.service;
 
+import java.util.Map;
+
 import com.bidder.service.mappers.AppUserMapper;
 import com.bidder.service.models.AppUser;
 import com.bidder.service.models.AppUserPrincipal;
@@ -19,8 +21,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Map;
 
 import static com.bidder.service.utils.Constants.ExceptionMessages.INVALID_CREDENTIALS;
 import static com.bidder.service.utils.Constants.ExceptionMessages.INVALID_PASSWORD_FORMAT;
@@ -74,11 +74,8 @@ public class AuthService {
 				AppUserPrincipal.builder().userId(appUser.getId()).username(getUsernameForSecurity(request)).build());
 
 		// ToDo: remove, this is for testing purposes
-		var notificationRequest = new SendNotificationRequest(
-				appUser.getId(), TemplateName.WELCOME_REGISTRATION,
-				Map.of(ContactType.APP, ""),
-				Map.of("fullName", appUser.getFullName())
-		);
+		var notificationRequest = new SendNotificationRequest(appUser.getId(), TemplateName.WELCOME_REGISTRATION,
+				Map.of(ContactType.APP, ""), Map.of("fullName", appUser.getFullName()));
 
 		kafkaTemplate.send("notification", notificationRequest);
 

@@ -1,6 +1,4 @@
-/* (C) 2026 
-bidder.app */
-package com.bidder.service.models.request;
+package models.dtos.request;
 
 import jakarta.validation.constraints.NotNull;
 import models.ContactType;

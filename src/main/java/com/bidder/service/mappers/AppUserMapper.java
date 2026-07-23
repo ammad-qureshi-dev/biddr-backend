@@ -2,10 +2,10 @@
 bidder.app */
 package com.bidder.service.mappers;
 
-import com.bidder.service.models.AppUser;
-import com.bidder.service.models.request.RegisterAppUserRequest;
-import com.bidder.service.models.response.AppUserDto;
 import com.bidder.service.utils.HashingUtil;
+import models.dtos.request.RegisterAppUserRequest;
+import models.dtos.response.AppUserDto;
+import models.entities.AppUser;
 
 public class AppUserMapper {
 	public static final AppUser requestToEntity(RegisterAppUserRequest request) {

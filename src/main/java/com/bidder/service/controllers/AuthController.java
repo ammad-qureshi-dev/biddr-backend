@@ -4,15 +4,15 @@ package com.bidder.service.controllers;
 
 import java.util.UUID;
 
-import com.bidder.service.models.request.LoginRequest;
-import com.bidder.service.models.request.RegisterAppUserRequest;
-import com.bidder.service.models.request.TokenRequest;
 import com.bidder.service.models.response.ApiResponse;
 import com.bidder.service.service.AuthService;
 import com.bidder.service.service.JwtService;
 import com.bidder.service.service.PasswordService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import models.dtos.request.LoginRequest;
+import models.dtos.request.RegisterAppUserRequest;
+import models.dtos.request.TokenRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;

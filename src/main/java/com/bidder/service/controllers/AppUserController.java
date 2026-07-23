@@ -5,12 +5,12 @@ package com.bidder.service.controllers;
 import java.util.Map;
 
 import com.bidder.service.models.AppUserPrincipal;
-import com.bidder.service.models.request.PreferredContactMethodRequest;
 import com.bidder.service.models.response.ApiResponse;
 import com.bidder.service.service.AppUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import models.ContactType;
+import models.dtos.request.PreferredContactMethodRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

@@ -6,7 +6,13 @@ plugins {
 }
 
 group = 'com.bidder'
-version = '0.0.1-SNAPSHOT'
+version = '0.0.2'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
 
 repositories {
     mavenCentral()
@@ -27,6 +33,38 @@ repositories {
     }
 }
 
+publishing {
+    publications {
+        gpr(MavenPublication) {
+            from components.java
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'GitHubPackages'
+            url = uri('https://maven.pkg.github.com/ammad-qureshi-dev/bidder-identity-and-auth-service')
+            credentials {
+                username = System.getenv('BIDDER_USERNAME')
+                password = System.getenv('BIDDER_GITHUB_TOKEN')
+            }
+        }
+    }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
+    }
+}
+
 dependencies {
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -42,7 +80,6 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'
 
     implementation 'com.bidder:notifications-model:2.1.1'
-    implementation 'com.bidder:catalog-service-model:0.0.1'
 }
 
 test {

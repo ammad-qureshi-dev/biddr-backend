@@ -5,13 +5,13 @@ package com.bidder.service.service;
 import java.util.Map;
 import java.util.UUID;
 
-import com.bidder.service.models.AppUser;
-import com.bidder.service.models.request.PreferredContactMethodRequest;
 import com.bidder.service.repository.AppUserRepository;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import models.ContactType;
+import models.dtos.request.PreferredContactMethodRequest;
+import models.entities.AppUser;
 import org.springframework.stereotype.Service;
 
 import static com.bidder.service.utils.Constants.Messages.NOT_APPLICABLE;

@@ -1,6 +1,4 @@
-/* (C) 2026 
-bidder.app */
-package com.bidder.service.models;
+package models.entities;
 
 import java.time.LocalDateTime;
 

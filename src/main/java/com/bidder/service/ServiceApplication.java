@@ -4,10 +4,10 @@ package com.bidder.service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
 
-@EnableScheduling
 @SpringBootApplication
+@EntityScan(basePackages = {"com.bidder.service", "models.entities"})
 public class ServiceApplication {
 
 	public static void main(String[] args) {

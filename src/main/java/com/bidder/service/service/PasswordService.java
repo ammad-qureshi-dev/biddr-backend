@@ -6,8 +6,6 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-import com.bidder.service.models.*;
-import com.bidder.service.models.request.TokenRequest;
 import com.bidder.service.repository.AccessTokenRepository;
 import com.bidder.service.repository.AppUserRepository;
 import com.bidder.service.utils.HashingUtil;
@@ -15,6 +13,10 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import models.ContactType;
+import models.dtos.request.TokenRequest;
+import models.entities.AccessToken;
+import models.entities.AppUser;
+import models.entities.TokenType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 

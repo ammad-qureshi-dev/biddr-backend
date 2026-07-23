@@ -1,16 +1,13 @@
-/* (C) 2026 
-bidder.app */
-package com.bidder.service.models;
+package models.entities;
 
-import java.util.List;
 import java.util.UUID;
 
-import com.bidder.service.utils.Constants;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import models.ContactType;
+import utils.Constants;
 
 @Setter
 @Getter
@@ -24,10 +21,6 @@ public class AppUser extends BaseEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
 	private UUID id;
-
-	// Entity Relationships
-	@OneToMany(mappedBy = "bidder", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<Bid> bids;
 
 	@NotNull private String fullName;
 

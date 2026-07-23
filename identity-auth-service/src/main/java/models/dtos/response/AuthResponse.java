@@ -1,6 +1,4 @@
-/* (C) 2026 
-bidder.app */
-package com.bidder.service.models.response;
+package models.dtos.response;
 
 import java.util.UUID;
 
